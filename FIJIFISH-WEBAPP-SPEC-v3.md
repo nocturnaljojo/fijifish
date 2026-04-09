@@ -689,7 +689,7 @@ notification_log
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 14 (App Router) + TypeScript |
+| Frontend | Next.js 16 (App Router) + TypeScript |
 | Auth | Clerk (4 roles, phone OTP, webhooks) |
 | Styling | Tailwind CSS (WorldView dark theme) |
 | Database | Supabase (AU region) + Realtime subscriptions |
@@ -762,7 +762,7 @@ See `/worldview-ui` skill for complete design system. Key principles:
 ## 15. BUILD PHASES
 
 ### Phase 0 — Foundation (Session 1-2)
-- [ ] Next.js 14 + Tailwind + TypeScript scaffold
+- [ ] Next.js 16 + Tailwind + TypeScript scaffold
 - [ ] Clerk integration (4 roles, webhook sync)
 - [ ] Supabase project (AU region) + full v3 migration
 - [ ] Seed: Galoa village, 5-7 species, seasons, delivery zones, test window

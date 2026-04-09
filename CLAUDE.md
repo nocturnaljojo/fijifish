@@ -6,7 +6,7 @@ Real-time tracking from ocean to doorstep. Live scarcity (capacity + timer).
 Multi-village supply network. WorldView HUD aesthetic.
 
 ## Stack
-Next.js 14 (App Router), TypeScript, Clerk (auth, 4 roles),
+Next.js 16 (App Router), TypeScript, Clerk (auth, 4 roles),
 Supabase (AU region, data + storage + realtime), Stripe, Tailwind CSS,
 Mapbox GL JS (dark maps), Twilio (SMS/WhatsApp), Vercel.
 
