@@ -17,7 +17,7 @@ export default function DeliveryBanner() {
               </span>
             </span>
             <span className="text-text-secondary hidden sm:inline text-xs">
-              ✈️&nbsp; Fiji Airways FJ391 — Labasa → Canberra
+              ✈️&nbsp; Fiji Airways FJ911 — Nadi → Sydney
             </span>
           </div>
           <div className="flex items-center gap-2 text-text-secondary text-sm">
@@ -30,7 +30,7 @@ export default function DeliveryBanner() {
         </div>
         {/* Mobile-only flight line */}
         <div className="sm:hidden pb-2 text-xs text-text-secondary">
-          ✈️&nbsp; FJ391 Labasa → Canberra
+          ✈️&nbsp; FJ911 Nadi → Sydney
         </div>
       </div>
     </div>

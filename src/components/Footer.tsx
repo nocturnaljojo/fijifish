@@ -42,7 +42,7 @@ export default function Footer() {
                   className="mt-1 w-1.5 h-1.5 rounded-full bg-ocean-teal shrink-0"
                   aria-hidden="true"
                 />
-                Fiji Airways — Labasa → Canberra
+                Fiji Airways FJ911 — Nadi → Sydney
               </p>
               <p className="flex items-start gap-2.5">
                 <span
