@@ -536,7 +536,7 @@ inventory_availability
 
 delivery_zones
   id UUID PRIMARY KEY
-  name TEXT  -- Wagga Wagga, Griffith, etc.
+  name TEXT  -- Wagga Wagga, Griffith, Leeton, Narrandera, Canberra, Goulburn, Young, Cowra, Eden
   state TEXT  -- NSW, ACT
   delivery_fee_aud_cents INT
   min_order_aud_cents INT

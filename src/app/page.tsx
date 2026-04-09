@@ -1,9 +1,11 @@
 import { createServerSupabaseClient } from "@/lib/supabase";
 import DeliveryBanner from "@/components/DeliveryBanner";
+import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
 import FishCard, { type FishCardData } from "@/components/FishCard";
 import GaloaMap from "@/components/GaloaMap";
 import FishSurvey from "@/components/FishSurvey";
+import DeliveryDemandPoll from "@/components/DeliveryDemandPoll";
 import VillagePreview from "@/components/VillagePreview";
 import Footer from "@/components/Footer";
 
@@ -43,8 +45,11 @@ const TEST_INVENTORY: Record<
   Walu:     { price_aud_cents: 4200, available_kg: 72, total_kg: 100 },
   Kawakawa: { price_aud_cents: 3500, available_kg: 15, total_kg: 80  },
   Donu:     { price_aud_cents: 5500, available_kg: 8,  total_kg: 40  },
-  Trevally: { price_aud_cents: 3800, available_kg: 0,  total_kg: 60  },
-  Lobster:  { price_aud_cents: 9800, available_kg: 25, total_kg: 30  },
+  Saqa:     { price_aud_cents: 3800, available_kg: 0,  total_kg: 60  },
+  Urau:     { price_aud_cents: 9800, available_kg: 25, total_kg: 30  },
+  Kacika:   { price_aud_cents: 4500, available_kg: 40, total_kg: 60  },
+  Sabutu:   { price_aud_cents: 4000, available_kg: 30, total_kg: 50  },
+  Kawago:   { price_aud_cents: 3600, available_kg: 55, total_kg: 70  },
 };
 const DEFAULT_INVENTORY = {
   price_aud_cents: 4000,
@@ -75,7 +80,7 @@ function resolveInventory(nameFijian: string | null, nameEnglish: string) {
   );
 }
 
-/** Walu first, then by Fijian name, then English */
+/** Walu first, then alphabetical by Fijian name */
 function sortFish(fish: FishCardData[]): FishCardData[] {
   return [...fish].sort((a, b) => {
     const aName = (a.name_fijian ?? a.name_english).toLowerCase();
@@ -165,7 +170,10 @@ export default async function Home() {
         {/* 1 — Hero */}
         <HeroSection />
 
-        {/* 2 — Seasonal fish grid */}
+        {/* 2 — Delivery zone awareness */}
+        <DeliveryZoneBanner />
+
+        {/* 3 — Seasonal fish grid */}
         <section
           id="fish-grid"
           className="px-4 py-12 sm:py-16 scroll-mt-20"
@@ -208,13 +216,16 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 3 — Galoa animated map */}
+        {/* 4 — Galoa animated map */}
         <GaloaMap />
 
-        {/* 4 — Fish interest survey */}
+        {/* 5 — Fish interest survey (auth required) */}
         <FishSurvey species={surveySpecies} />
 
-        {/* 5 — Village preview */}
+        {/* 6 — Delivery demand poll (auth required) */}
+        <DeliveryDemandPoll species={surveySpecies} />
+
+        {/* 7 — Village preview */}
         <VillagePreview village={village} />
       </main>
 
