@@ -49,12 +49,8 @@ export default function HeroSection() {
         </h1>
 
         <p className="max-w-2xl mx-auto text-base sm:text-lg text-text-secondary leading-relaxed mb-10">
-          Wild-caught by the fishermen of{" "}
-          <span className="text-text-primary font-semibold">
-            Galoa Village, Bua
-          </span>{" "}
-          — air-freighted on Fiji Airways to your door in the Riverina. Pre-order
-          before the flight window closes.
+          Wild-caught by Pacific Island fishermen — air-freighted to your door
+          in the Riverina. Pre-order before the flight window closes.
         </p>
 
         {/* CTAs */}

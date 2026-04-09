@@ -28,7 +28,7 @@ export default function VillagePreview({
       <div className="max-w-6xl mx-auto">
         <div className="mb-10 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
-            Meet the Village Behind Your Fish
+            Our Fishing Communities
           </h2>
           <p className="text-text-secondary max-w-xl mx-auto text-sm sm:text-base">
             Your order directly supports a fishing family in rural Fiji.

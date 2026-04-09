@@ -45,7 +45,7 @@ export default function GaloaMap() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
-            Where Your Fish Comes From
+            Our Supply Chain
           </h2>
           <p className="text-text-secondary text-sm sm:text-base max-w-xl mx-auto">
             Caught in Bua Province, Vanua Levu — flown directly to Canberra, then

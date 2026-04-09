@@ -4,6 +4,7 @@ import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
 import FishCard, { type FishCardData } from "@/components/FishCard";
 import GaloaMap from "@/components/GaloaMap";
+import ImpactFeed from "@/components/ImpactFeed";
 import FishSurvey from "@/components/FishSurvey";
 import DeliveryDemandPoll from "@/components/DeliveryDemandPoll";
 import VillagePreview from "@/components/VillagePreview";
@@ -219,13 +220,16 @@ export default async function Home() {
         {/* 4 — Galoa animated map */}
         <GaloaMap />
 
-        {/* 5 — Fish interest survey (auth required) */}
+        {/* 5 — Impact stories feed */}
+        <ImpactFeed />
+
+        {/* 6 — Fish interest survey (auth required) */}
         <FishSurvey species={surveySpecies} />
 
-        {/* 6 — Delivery demand poll (auth required) */}
+        {/* 7 — Delivery demand poll (auth required) */}
         <DeliveryDemandPoll species={surveySpecies} />
 
-        {/* 7 — Village preview */}
+        {/* 8 — Village preview */}
         <VillagePreview village={village} />
       </main>
 

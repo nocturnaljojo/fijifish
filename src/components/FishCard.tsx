@@ -9,6 +9,7 @@ export interface FishCardData {
   price_aud_cents: number;
   available_kg: number;
   total_kg: number;
+  village_name?: string;
 }
 
 function formatPrice(cents: number): string {
@@ -72,7 +73,7 @@ export default function FishCard({ fish }: { fish: FishCardData }) {
             </p>
           )}
           <p className="text-xs text-text-secondary mt-1.5">
-            From Galoa Village, Bua&nbsp;🇫🇯
+            From {fish.village_name ?? "Galoa Village, Bua"}&nbsp;🇫🇯
           </p>
         </div>
 
