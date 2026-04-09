@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
+/* ── WorldView HUD — colour palette ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary:     #0a0f1a;
+  --bg-secondary:   #0d1520;
+  --bg-tertiary:    #111a2e;
+  --ocean-teal:     #4fc3f7;
+  --reef-coral:     #ff7043;
+  --sunset-gold:    #ffab40;
+  --lagoon-green:   #66bb6a;
+  --deep-purple:    #ce93d8;
+  --text-primary:   #e0e6ed;
+  --text-secondary: #90a4ae;
+  --border-default: #1e2a3a;
 }
 
+/* Tailwind v4 — static colour tokens */
+@theme {
+  --color-bg-primary:     #0a0f1a;
+  --color-bg-secondary:   #0d1520;
+  --color-bg-tertiary:    #111a2e;
+  --color-ocean-teal:     #4fc3f7;
+  --color-reef-coral:     #ff7043;
+  --color-sunset-gold:    #ffab40;
+  --color-lagoon-green:   #66bb6a;
+  --color-deep-purple:    #ce93d8;
+  --color-text-primary:   #e0e6ed;
+  --color-text-secondary: #90a4ae;
+  --color-border-default: #1e2a3a;
+}
+
+/* Tailwind v4 — font tokens reference Next.js font CSS vars at runtime */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0a0f1a;
+  color: #e0e6ed;
 }

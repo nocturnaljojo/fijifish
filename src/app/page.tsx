@@ -1,65 +1,186 @@
-import Image from "next/image";
+import { createServerSupabaseClient } from "@/lib/supabase";
+import DeliveryBanner from "@/components/DeliveryBanner";
+import HeroSection from "@/components/HeroSection";
+import FishCard, { type FishCardData } from "@/components/FishCard";
+import VillagePreview from "@/components/VillagePreview";
+import Footer from "@/components/Footer";
 
-export default function Home() {
+// ── Types ────────────────────────────────────────────────────────────────────
+
+type FishRow = {
+  id: string;
+  name_fijian: string | null;
+  name_english: string;
+  name_scientific: string | null;
+  cooking_suggestions: string | null;
+  seasons: { month_start: number; month_end: number }[];
+};
+
+type VillageRow = {
+  name: string;
+  province: string;
+  island: string;
+  description: string | null;
+  impact_summary: string | null;
+};
+
+// ── Test inventory ─────────────────────────────────────────────────────────
+// Hardcoded until inventory_availability is wired in Phase 1b.
+
+const TEST_INVENTORY: Record<
+  string,
+  { price_aud_cents: number; available_kg: number; total_kg: number }
+> = {
+  Walu:     { price_aud_cents: 4200, available_kg: 72, total_kg: 100 },
+  Kawakawa: { price_aud_cents: 3500, available_kg: 15, total_kg: 80  },
+  Donu:     { price_aud_cents: 5500, available_kg: 8,  total_kg: 40  },
+  Trevally: { price_aud_cents: 3800, available_kg: 0,  total_kg: 60  },
+  Lobster:  { price_aud_cents: 9800, available_kg: 25, total_kg: 30  },
+};
+const DEFAULT_INVENTORY = {
+  price_aud_cents: 4000,
+  available_kg: 60,
+  total_kg: 100,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function isInSeason(
+  seasons: { month_start: number; month_end: number }[],
+  month: number,
+): boolean {
+  return seasons.some((s) => {
+    if (s.month_start <= s.month_end) {
+      return month >= s.month_start && month <= s.month_end;
+    }
+    // wrap-around season (e.g. Nov–Feb: month_start=11, month_end=2)
+    return month >= s.month_start || month <= s.month_end;
+  });
+}
+
+function resolveInventory(
+  nameFijian: string | null,
+  nameEnglish: string,
+): { price_aud_cents: number; available_kg: number; total_kg: number } {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    (nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
+    TEST_INVENTORY[nameEnglish] ??
+    DEFAULT_INVENTORY
+  );
+}
+
+// ── Data fetchers ─────────────────────────────────────────────────────────
+
+async function getSeasonalFish(): Promise<FishCardData[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("fish_species")
+      .select(
+        "id, name_fijian, name_english, name_scientific, cooking_suggestions, seasons(month_start, month_end)",
+      )
+      .eq("is_active", true);
+
+    if (error || !data) return [];
+
+    const currentMonth = new Date().getMonth() + 1; // 1–12
+
+    return (data as FishRow[])
+      .filter((fish) => isInSeason(fish.seasons ?? [], currentMonth))
+      .map((fish) => ({
+        id: fish.id,
+        name_fijian: fish.name_fijian,
+        name_english: fish.name_english,
+        name_scientific: fish.name_scientific,
+        cooking_suggestions: fish.cooking_suggestions,
+        ...resolveInventory(fish.name_fijian, fish.name_english),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+async function getGaloaVillage(): Promise<VillageRow | null> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data } = await supabase
+      .from("villages")
+      .select("name, province, island, description, impact_summary")
+      .eq("name", "Galoa")
+      .eq("is_active", true)
+      .single();
+    return (data as VillageRow) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────
+
+export default async function Home() {
+  const [fishList, village] = await Promise.all([
+    getSeasonalFish(),
+    getGaloaVillage(),
+  ]);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <DeliveryBanner />
+
+      <main className="flex-1">
+        <HeroSection />
+
+        {/* ── Seasonal fish grid ─────────────────────────────────────────── */}
+        <section
+          id="fish-grid"
+          className="px-4 py-12 sm:py-16 scroll-mt-20"
+        >
+          <div className="max-w-6xl mx-auto">
+            {/* Section header */}
+            <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5">
+                  In Season Now
+                </h2>
+                <p className="text-text-secondary text-sm sm:text-base">
+                  Wild-caught from the reefs of Galoa Village — order before the
+                  flight window closes.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-text-secondary border border-border-default rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto">
+                April 2026
+              </span>
+            </div>
+
+            {fishList.length === 0 ? (
+              <div className="py-20 text-center border border-border-default rounded-2xl bg-bg-secondary">
+                <span
+                  className="text-5xl block mb-4"
+                  aria-hidden="true"
+                >
+                  🌊
+                </span>
+                <p className="text-text-primary font-semibold text-lg mb-2">
+                  No fish available this season
+                </p>
+                <p className="text-text-secondary text-sm max-w-xs mx-auto">
+                  Check back soon — the catch calendar changes with the seasons.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                {fishList.map((fish) => (
+                  <FishCard key={fish.id} fish={fish} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <VillagePreview village={village} />
       </main>
+
+      <Footer />
     </div>
   );
 }
