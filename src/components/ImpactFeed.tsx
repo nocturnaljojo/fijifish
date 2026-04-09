@@ -21,7 +21,7 @@ async function getImpactStories(): Promise<StoryRow[]> {
       .limit(3);
 
     if (error || !data) return [];
-    return data as StoryRow[];
+    return data as unknown as StoryRow[];
   } catch {
     return [];
   }
