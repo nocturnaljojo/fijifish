@@ -2,6 +2,8 @@ import { createServerSupabaseClient } from "@/lib/supabase";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import HeroSection from "@/components/HeroSection";
 import FishCard, { type FishCardData } from "@/components/FishCard";
+import GaloaMap from "@/components/GaloaMap";
+import FishSurvey from "@/components/FishSurvey";
 import VillagePreview from "@/components/VillagePreview";
 import Footer from "@/components/Footer";
 
@@ -22,6 +24,13 @@ type VillageRow = {
   island: string;
   description: string | null;
   impact_summary: string | null;
+};
+
+type SurveyRow = {
+  fish_species_id: string;
+  name_fijian: string | null;
+  name_english: string;
+  vote_count: number;
 };
 
 // ── Test inventory ─────────────────────────────────────────────────────────
@@ -58,15 +67,23 @@ function isInSeason(
   });
 }
 
-function resolveInventory(
-  nameFijian: string | null,
-  nameEnglish: string,
-): { price_aud_cents: number; available_kg: number; total_kg: number } {
+function resolveInventory(nameFijian: string | null, nameEnglish: string) {
   return (
     (nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
     TEST_INVENTORY[nameEnglish] ??
     DEFAULT_INVENTORY
   );
+}
+
+/** Walu first, then by Fijian name, then English */
+function sortFish(fish: FishCardData[]): FishCardData[] {
+  return [...fish].sort((a, b) => {
+    const aName = (a.name_fijian ?? a.name_english).toLowerCase();
+    const bName = (b.name_fijian ?? b.name_english).toLowerCase();
+    if (aName === "walu") return -1;
+    if (bName === "walu") return 1;
+    return aName.localeCompare(bName);
+  });
 }
 
 // ── Data fetchers ─────────────────────────────────────────────────────────
@@ -85,7 +102,7 @@ async function getSeasonalFish(): Promise<FishCardData[]> {
 
     const currentMonth = new Date().getMonth() + 1; // 1–12
 
-    return (data as FishRow[])
+    const seasonal = (data as FishRow[])
       .filter((fish) => isInSeason(fish.seasons ?? [], currentMonth))
       .map((fish) => ({
         id: fish.id,
@@ -95,6 +112,8 @@ async function getSeasonalFish(): Promise<FishCardData[]> {
         cooking_suggestions: fish.cooking_suggestions,
         ...resolveInventory(fish.name_fijian, fish.name_english),
       }));
+
+    return sortFish(seasonal);
   } catch {
     return [];
   }
@@ -115,12 +134,27 @@ async function getGaloaVillage(): Promise<VillageRow | null> {
   }
 }
 
+async function getSurveySpecies(): Promise<SurveyRow[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("fish_interest_summary")
+      .select("fish_species_id, name_fijian, name_english, vote_count");
+
+    if (error || !data) return [];
+    return data as SurveyRow[];
+  } catch {
+    return [];
+  }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [fishList, village] = await Promise.all([
+  const [fishList, village, surveySpecies] = await Promise.all([
     getSeasonalFish(),
     getGaloaVillage(),
+    getSurveySpecies(),
   ]);
 
   return (
@@ -128,15 +162,15 @@ export default async function Home() {
       <DeliveryBanner />
 
       <main className="flex-1">
+        {/* 1 — Hero */}
         <HeroSection />
 
-        {/* ── Seasonal fish grid ─────────────────────────────────────────── */}
+        {/* 2 — Seasonal fish grid */}
         <section
           id="fish-grid"
           className="px-4 py-12 sm:py-16 scroll-mt-20"
         >
           <div className="max-w-6xl mx-auto">
-            {/* Section header */}
             <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5">
@@ -154,10 +188,7 @@ export default async function Home() {
 
             {fishList.length === 0 ? (
               <div className="py-20 text-center border border-border-default rounded-2xl bg-bg-secondary">
-                <span
-                  className="text-5xl block mb-4"
-                  aria-hidden="true"
-                >
+                <span className="text-5xl block mb-4" aria-hidden="true">
                   🌊
                 </span>
                 <p className="text-text-primary font-semibold text-lg mb-2">
@@ -177,6 +208,13 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* 3 — Galoa animated map */}
+        <GaloaMap />
+
+        {/* 4 — Fish interest survey */}
+        <FishSurvey species={surveySpecies} />
+
+        {/* 5 — Village preview */}
         <VillagePreview village={village} />
       </main>
 

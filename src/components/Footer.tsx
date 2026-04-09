@@ -1,3 +1,5 @@
+import FeedbackForm from "./FeedbackForm";
+
 const LINKS = [
   { label: "About", href: "#" },
   { label: "Privacy Policy", href: "#" },
@@ -67,6 +69,7 @@ export default function Footer() {
                   {link.label}
                 </a>
               ))}
+              <FeedbackForm />
             </div>
           </div>
         </div>
