@@ -1,3 +1,7 @@
+// Force fresh data on every request — no ISR caching (fish grid was showing empty due to stale cache)
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { createServerSupabaseClient } from "@/lib/supabase";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";

@@ -1,20 +1,58 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 /**
- * Phase 0 proxy (formerly "middleware" — renamed in Next.js 16).
- * Basic auth only, no role checks yet.
- * Protected routes: /order, /account (and subpaths).
- * Everything else is public.
- *
- * Role-based protection (/supplier/*, /driver/*, /admin/*) will be added
- * when Clerk publicMetadata roles are wired up in a later step.
+ * Route protection matrix:
+ * /admin/*     → admin only
+ * /supplier/*  → supplier + admin
+ * /driver/*    → driver + admin
+ * /order, /account → any authenticated user
+ * /catch/*     → public (QR code traceability pages)
+ * Everything else → public
  */
-const isProtectedRoute = createRouteMatcher(["/order(.*)", "/account(.*)"]);
+
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+const isSupplierRoute = createRouteMatcher(["/supplier(.*)"]);
+const isDriverRoute = createRouteMatcher(["/driver(.*)"]);
+const isAuthRoute = createRouteMatcher(["/order(.*)", "/account(.*)", "/track(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  const { sessionClaims, userId } = await auth();
+
+  const role =
+    (sessionClaims?.metadata as { role?: string } | undefined)?.role ?? null;
+
+  // Admin-only routes
+  if (isAdminRoute(req)) {
+    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
+    if (role !== "admin")
+      return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.next();
   }
+
+  // Supplier routes — supplier + admin
+  if (isSupplierRoute(req)) {
+    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
+    if (role !== "supplier" && role !== "admin")
+      return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.next();
+  }
+
+  // Driver routes — driver + admin
+  if (isDriverRoute(req)) {
+    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
+    if (role !== "driver" && role !== "admin")
+      return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.next();
+  }
+
+  // Buyer routes — any authenticated user
+  if (isAuthRoute(req)) {
+    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {
