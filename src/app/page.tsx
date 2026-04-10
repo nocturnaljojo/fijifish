@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createPublicSupabaseClient } from "@/lib/supabase";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
@@ -103,7 +103,7 @@ function sortFish(fish: FishCardData[]): FishCardData[] {
 
 async function getSeasonalFish(): Promise<FishCardData[]> {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from("fish_species")
       .select(
@@ -134,7 +134,7 @@ async function getSeasonalFish(): Promise<FishCardData[]> {
 
 async function getGaloaVillage(): Promise<VillageRow | null> {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data } = await supabase
       .from("villages")
       .select("name, province, island, description, impact_summary")
@@ -149,7 +149,7 @@ async function getGaloaVillage(): Promise<VillageRow | null> {
 
 async function getSurveySpecies(): Promise<SurveyRow[]> {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from("fish_interest_summary")
       .select("fish_species_id, name_fijian, name_english, vote_count");

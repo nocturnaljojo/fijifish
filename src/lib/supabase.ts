@@ -3,45 +3,70 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 /**
  * Supabase clients for FijiFish.
  *
- * Two clients:
- *   - Browser / client components: createBrowserSupabaseClient() — uses the
- *     public anon key. Honours Row Level Security. Safe in the browser.
- *   - Server components / route handlers / server actions:
- *     createServerSupabaseClient() — uses the service role key, which BYPASSES
- *     all RLS. NEVER call this from a client component. NEVER expose the
- *     service role key to the browser.
+ * THREE clients:
  *
- * Phase 0 note: RLS policies are not yet in place (schema created without
- * policies). Once Clerk roles are wired up the server client will only be
- * used for trusted admin / webhook paths; day-to-day reads/writes will go
- * through the browser client under RLS.
+ *   createPublicSupabaseClient()
+ *     Uses the anon key. Respects RLS. Safe for public server-side reads
+ *     (fish species, seasons, villages, impact stories). Use this in all
+ *     server components that serve public pages.
+ *
+ *   createBrowserSupabaseClient()
+ *     Same anon key, for client components. Respects RLS.
+ *
+ *   createServerSupabaseClient()
+ *     Uses the service role key — BYPASSES RLS. Reserved exclusively for:
+ *     - Webhook handlers (Clerk → Supabase sync)
+ *     - Admin API routes that need to bypass RLS
+ *     - Server actions that run privileged operations
+ *     NEVER call from client components or public page routes.
+ *
+ * Why the split: SUPABASE_SERVICE_ROLE_KEY is not required on Vercel for
+ * public pages. Using it unnecessarily causes silent failures if the env var
+ * is not configured, making the fish grid appear empty.
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export function createBrowserSupabaseClient(): SupabaseClient {
+/** Public reads — anon key, server-safe, respects RLS */
+export function createPublicSupabaseClient(): SupabaseClient {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
-        "Copy .env.example to .env.local and fill them in.",
+        "Set these in Vercel → Settings → Environment Variables.",
+    );
+  }
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/** Client components — anon key, browser-safe, respects RLS */
+export function createBrowserSupabaseClient(): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
   }
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
+/**
+ * Admin/webhook only — service role key, BYPASSES RLS.
+ * NEVER use for public page data fetching.
+ */
 export function createServerSupabaseClient(): SupabaseClient {
   if (typeof window !== "undefined") {
     throw new Error(
-      "createServerSupabaseClient() must only be called on the server. " +
-        "It uses the service role key which bypasses RLS.",
+      "createServerSupabaseClient() must only be called on the server.",
     );
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. " +
-        "Service role key is server-only — never expose to the browser.",
+        "Service role key must be set in Vercel → Settings → Environment Variables " +
+        "(non-public, server-only). Only needed for admin/webhook routes.",
     );
   }
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createPublicSupabaseClient } from "@/lib/supabase";
 import Link from "next/link";
 
 type StoryRow = {
@@ -12,7 +12,7 @@ type StoryRow = {
 
 async function getImpactStories(): Promise<StoryRow[]> {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from("impact_stories")
       .select("id, title, body, photo_url, published_at, villages(name)")

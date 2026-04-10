@@ -2,7 +2,7 @@
 // Anyone with the link can view the catch details for their order.
 // Full page built in Session B when admin panel can create batches.
 
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createPublicSupabaseClient } from "@/lib/supabase";
 
 type Props = {
   params: Promise<{ batchCode: string }>;
@@ -14,7 +14,7 @@ export default async function CatchTracePage({ params }: Props) {
   // Stub: attempt DB lookup, show batch code regardless
   let batchFound = false;
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = createPublicSupabaseClient();
     const { data } = await supabase
       .from("catch_batches")
       .select("id, batch_code, fisher_name, catch_date, catch_method")

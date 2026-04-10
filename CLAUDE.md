@@ -10,10 +10,27 @@ Next.js 16 (App Router), TypeScript, Clerk (auth, 4 roles),
 Supabase (AU region, data + storage + realtime), Stripe, Tailwind CSS,
 Mapbox GL JS (dark maps), Twilio (SMS/WhatsApp), Vercel.
 
-## Status: Phase 0 — Foundation
+## Status: Phase 1b — Core features
 
 ## Source of truth: FIJIFISH-WEBAPP-SPEC-v3.md
 Read this before building any feature. If spec and code disagree, spec wins.
+
+## Mandatory workflow — NO EXCEPTIONS
+1. ALWAYS read CLAUDE.md, SESSIONS.md, and FIJIFISH-WEBAPP-SPEC-v3.md before writing any code
+2. State current phase, what was last built, known issues, and next task before starting
+3. ALWAYS update SESSIONS.md after completing any task
+4. ALWAYS update FIJIFISH-WEBAPP-SPEC-v3.md if any features changed
+5. ALWAYS commit with descriptive messages after each task
+6. ALWAYS push to main after commits
+7. NEVER start coding without completing steps 1–2
+
+## At session start
+1. Read CLAUDE.md, SESSIONS.md, FIJIFISH-WEBAPP-SPEC-v3.md
+2. State: current phase, last built, known issues, next task
+3. Load relevant skills before writing code
+
+## At session end
+Run /wrap-up
 
 ## 4 user roles (Clerk)
 - buyer: browse, order (AU only), track, rate
@@ -33,8 +50,20 @@ Read this before building any feature. If spec and code disagree, spec wins.
 - Broadcasts: admin SMS/WhatsApp to customer segments, Spam Act 2003 compliant
 - Village impact stories: public pages showing what revenue has funded
 
+## Supabase client pattern (CRITICAL)
+Three clients in src/lib/supabase.ts:
+- `createPublicSupabaseClient()` — anon key, for ALL public server components (page.tsx, ImpactFeed, catch pages). Use this for any page that fetches public data. Does NOT require SUPABASE_SERVICE_ROLE_KEY.
+- `createBrowserSupabaseClient()` — anon key, for client components
+- `createServerSupabaseClient()` — service role key, BYPASSES RLS. Reserved for admin API routes and Clerk webhooks ONLY. Will throw and cause silent failures on public pages if SUPABASE_SERVICE_ROLE_KEY is not set in Vercel.
+
+NEVER use createServerSupabaseClient() in public page components. This was the root cause of the empty fish grid bug.
+
 ## Reference files
 - FIJIFISH-WEBAPP-SPEC-v3.md — COMPLETE product spec
+- src/lib/supabase.ts — three Supabase clients (public/browser/server)
+- src/lib/roles.ts — server-side role helpers
+- src/lib/roles-client.ts — client-side useRole() hook
+- src/lib/pricing.ts — AUD/FJD dual currency logic
 - src/lib/order-engine.ts — order window state machine
 - src/lib/route-optimiser.ts — nearest-neighbour delivery routing
 - src/lib/notifications.ts — central notification dispatcher
@@ -63,15 +92,7 @@ Read this before building any feature. If spec and code disagree, spec wins.
 - NEVER use light theme except supplier portal
 - NEVER send broadcast without opt-out mechanism
 - NEVER skip Spam Act 2003 compliance on broadcasts
-
-## At session start
-1. Read CLAUDE.md and SESSIONS.md
-2. Read FIJIFISH-WEBAPP-SPEC-v3.md if building a new feature
-3. State current phase and next task
-4. Load relevant skills before writing code
-
-## At session end
-Run /wrap-up
+- NEVER use createServerSupabaseClient() in public page components
 
 ## Skills (12)
 - /clerk-auth — roles, middleware, Supabase sync, village_id on suppliers

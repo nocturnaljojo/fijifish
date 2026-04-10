@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const plexMono = IBM_Plex_Mono({
@@ -59,6 +60,7 @@ export default function RootLayout({
         className={`${plexMono.variable} ${jakarta.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col bg-bg-primary text-text-primary font-sans">
+          <Navbar />
           {children}
         </body>
       </html>
