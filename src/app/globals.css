@@ -40,4 +40,8 @@ html,
 body {
   background-color: #0a0f1a;
   color: #e0e6ed;
+  background-image:
+    linear-gradient(rgba(79, 195, 247, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 195, 247, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

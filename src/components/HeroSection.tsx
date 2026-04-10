@@ -1,90 +1,143 @@
+"use client";
+
+import { motion, type Transition } from "framer-motion";
+
+function fadeUp(delay = 0): {
+  initial: { opacity: number; y: number };
+  animate: { opacity: number; y: number };
+  transition: Transition;
+} {
+  return {
+    initial: { opacity: 0, y: 24 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6, delay, ease: "easeOut" },
+  };
+}
+
+const BADGES = [
+  { icon: "✈️", label: "AIR-FREIGHTED FIJI AIRWAYS" },
+  { icon: "🐟", label: "CAUGHT TO DOOR IN 48HRS" },
+  { icon: "🚚", label: "RIVERINA NSW DELIVERY" },
+];
+
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-14 pb-20 px-4 sm:pt-20 sm:pb-28">
-      {/* Ocean-teal radial glow from top */}
+      {/* Ocean-teal radial glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(ellipse 90% 55% at 50% -5%, rgba(79,195,247,0.11) 0%, transparent 65%), " +
+            "radial-gradient(ellipse 90% 55% at 50% -5%, rgba(79,195,247,0.13) 0%, transparent 65%), " +
             "radial-gradient(ellipse 50% 35% at 85% 75%, rgba(102,187,106,0.06) 0%, transparent 55%)",
-        }}
-      />
-
-      {/* Subtle tactical grid */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(79,195,247,0.04) 1px, transparent 1px), " +
-            "linear-gradient(90deg, rgba(79,195,247,0.04) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
         }}
       />
 
       <div className="relative max-w-4xl mx-auto text-center">
         {/* Live status badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-ocean-teal/25 bg-ocean-teal/5 text-ocean-teal text-xs font-mono tracking-widest uppercase">
+        <motion.div
+          {...fadeUp(0)}
+          className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-ocean-teal/25 bg-ocean-teal/5 text-ocean-teal text-xs font-mono tracking-widest uppercase"
+        >
           <span
             className="w-1.5 h-1.5 rounded-full bg-lagoon-green animate-pulse inline-block"
             aria-hidden="true"
           />
           Live — Orders open now
-        </div>
+        </motion.div>
 
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight mb-6">
-          Fresh from{" "}
+        {/* Headline */}
+        <motion.h1
+          {...fadeUp(0.1)}
+          className="text-4xl sm:text-6xl lg:text-7xl font-bold text-text-primary leading-tight tracking-tight mb-5"
+        >
+          Fresh Walu.
+          <br />
           <span
-            className="text-ocean-teal"
+            className="text-transparent bg-clip-text"
             style={{
-              textShadow: "0 0 40px rgba(79,195,247,0.25)",
+              backgroundImage: "linear-gradient(135deg, #4fc3f7 0%, #29b6f6 50%, #81d4fa 100%)",
             }}
           >
-            Fiji&apos;s Reefs
+            A$35/kg Delivered.
           </span>
-          <br />
-          to Your Table
-        </h1>
+        </motion.h1>
 
-        <p className="max-w-2xl mx-auto text-base sm:text-lg text-text-secondary leading-relaxed mb-10">
-          Wild-caught by Pacific Island fishermen — air-freighted to your door
-          in the Riverina. Pre-order before the flight window closes.
-        </p>
+        {/* Subtitle */}
+        <motion.p
+          {...fadeUp(0.25)}
+          className="max-w-2xl mx-auto text-base sm:text-lg text-text-secondary leading-relaxed mb-10"
+        >
+          Wild-caught Spanish Mackerel (Walu) from Bua Province. Vacuum-sealed
+          1&nbsp;kg fillets. No hidden fees — delivery to your door in the Riverina
+          is included.
+        </motion.p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+        <motion.div
+          {...fadeUp(0.4)}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
+        >
+          {/* Primary CTA */}
           <a
             href="#fish-grid"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-ocean-teal text-bg-primary font-semibold text-base min-h-[48px] hover:bg-[#29b6f6] active:bg-[#0288d1] transition-colors w-full sm:w-auto"
+            className="relative group inline-flex flex-col items-center justify-center px-10 py-3.5 rounded-xl bg-ocean-teal text-bg-primary font-bold min-h-[64px] overflow-hidden w-full sm:w-auto transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{ minWidth: "220px" }}
           >
-            🐟 See What&apos;s Fresh
+            {/* shimmer */}
+            <span
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
+                animation: "heroShimmer 3s ease-in-out infinite",
+              }}
+              aria-hidden="true"
+            />
+            <span className="relative text-[10px] font-mono tracking-[0.2em] uppercase opacity-70 mb-0.5">
+              ORDER NOW
+            </span>
+            <span className="relative text-lg font-bold">
+              Order Walu — A$35/kg
+            </span>
           </a>
+
+          {/* Secondary CTA */}
           <a
             href="#village"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-border-default text-text-secondary font-medium text-base min-h-[48px] hover:border-ocean-teal/40 hover:text-text-primary transition-colors w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-text-secondary font-medium text-base min-h-[56px] hover:border-ocean-teal/40 hover:text-text-primary transition-all w-full sm:w-auto backdrop-blur-sm bg-white/5"
           >
-            Meet the Village
+            See How We Support Fiji
           </a>
-        </div>
+        </motion.div>
 
-        {/* Trust markers */}
-        <div className="mt-12 pt-8 border-t border-border-default/40 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-text-secondary text-sm">
-          <span className="flex items-center gap-2">
-            <span className="text-lagoon-green" aria-hidden="true">✓</span>
-            Air-freighted Fiji Airways
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="text-lagoon-green" aria-hidden="true">✓</span>
-            Caught to door in 48hrs
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="text-lagoon-green" aria-hidden="true">✓</span>
-            Riverina NSW delivery
-          </span>
-        </div>
+        {/* Trust badges */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="mt-12 pt-8 border-t border-white/5 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
+        >
+          {BADGES.map((b) => (
+            <span
+              key={b.label}
+              className="flex items-center gap-2 text-[10px] font-mono text-text-secondary tracking-[0.15em] uppercase"
+            >
+              <span aria-hidden="true">{b.icon}</span>
+              {b.label}
+            </span>
+          ))}
+        </motion.div>
       </div>
+
+      <style>{`
+        @keyframes heroShimmer {
+          0%   { transform: translateX(-100%); }
+          55%  { transform: translateX(100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </section>
   );
 }

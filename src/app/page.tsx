@@ -3,6 +3,7 @@ import DeliveryBanner from "@/components/DeliveryBanner";
 import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
 import FishCard, { type FishCardData } from "@/components/FishCard";
+import ProcessSteps from "@/components/ProcessSteps";
 import GaloaMap from "@/components/GaloaMap";
 import ImpactFeed from "@/components/ImpactFeed";
 import FishSurvey from "@/components/FishSurvey";
@@ -43,7 +44,7 @@ const TEST_INVENTORY: Record<
   string,
   { price_aud_cents: number; available_kg: number; total_kg: number }
 > = {
-  Walu:     { price_aud_cents: 4200, available_kg: 72, total_kg: 100 },
+  Walu:     { price_aud_cents: 3500, available_kg: 72, total_kg: 100 },
   Kawakawa: { price_aud_cents: 3500, available_kg: 15, total_kg: 80  },
   Donu:     { price_aud_cents: 5500, available_kg: 8,  total_kg: 40  },
   Saqa:     { price_aud_cents: 3800, available_kg: 0,  total_kg: 60  },
@@ -154,6 +155,33 @@ async function getSurveySpecies(): Promise<SurveyRow[]> {
   }
 }
 
+// ── Coming Soon Card ──────────────────────────────────────────────────────
+
+function ComingSoonCard() {
+  return (
+    <div className="flex flex-col bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden p-5 justify-center items-center text-center gap-3 min-h-[200px]">
+      <span className="text-3xl opacity-40" aria-hidden="true">🦞</span>
+      <div>
+        <p className="text-xs font-mono text-deep-purple uppercase tracking-widest mb-1">
+          Coming Soon
+        </p>
+        <h3 className="text-base font-bold text-text-primary mb-2">
+          Lobster &amp; Trout
+        </h3>
+        <p className="text-xs text-text-secondary leading-relaxed max-w-xs mx-auto">
+          We add new species when community demand hits 30 votes.
+        </p>
+      </div>
+      <a
+        href="#survey"
+        className="text-xs text-deep-purple hover:text-[#e1bee7] transition-colors font-medium"
+      >
+        Vote for next fish →
+      </a>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default async function Home() {
@@ -162,6 +190,11 @@ export default async function Home() {
     getGaloaVillage(),
     getSurveySpecies(),
   ]);
+
+  const currentMonthLabel = new Date().toLocaleDateString("en-AU", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -174,7 +207,10 @@ export default async function Home() {
         {/* 2 — Delivery zone awareness */}
         <DeliveryZoneBanner />
 
-        {/* 3 — Seasonal fish grid */}
+        {/* 3 — Reef to Table: 3-step process */}
+        <ProcessSteps />
+
+        {/* 4 — Seasonal fish grid */}
         <section
           id="fish-grid"
           className="px-4 py-12 sm:py-16 scroll-mt-20"
@@ -191,12 +227,12 @@ export default async function Home() {
                 </p>
               </div>
               <span className="text-xs font-mono text-text-secondary border border-border-default rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto">
-                April 2026
+                {currentMonthLabel}
               </span>
             </div>
 
             {fishList.length === 0 ? (
-              <div className="py-20 text-center border border-border-default rounded-2xl bg-bg-secondary">
+              <div className="py-20 text-center border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm">
                 <span className="text-5xl block mb-4" aria-hidden="true">
                   🌊
                 </span>
@@ -209,25 +245,35 @@ export default async function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-                {fishList.map((fish) => (
-                  <FishCard key={fish.id} fish={fish} />
-                ))}
+                {fishList.map((fish, i) => {
+                  const isWalu =
+                    fish.name_fijian?.toLowerCase() === "walu" ||
+                    fish.name_english.toLowerCase() === "walu";
+                  return (
+                    <FishCard key={fish.id} fish={fish} isHero={isWalu && i === 0} index={i} />
+                  );
+                })}
+                <ComingSoonCard />
               </div>
             )}
           </div>
         </section>
 
-        {/* 4 — Galoa animated map */}
+        {/* 5 — Galoa animated map */}
         <GaloaMap />
 
-        {/* 5 — Impact stories feed */}
+        {/* 6 — Impact stories feed */}
         <ImpactFeed />
 
-        {/* 6 — Fish interest survey (auth required) */}
-        <FishSurvey species={surveySpecies} />
-
-        {/* 7 — Delivery demand poll (auth required) */}
-        <DeliveryDemandPoll species={surveySpecies} />
+        {/* 7 — Community: survey + demand poll side by side */}
+        <section id="survey" className="px-4 py-12 sm:py-16 scroll-mt-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <FishSurvey species={surveySpecies} />
+              <DeliveryDemandPoll species={surveySpecies} />
+            </div>
+          </div>
+        </section>
 
         {/* 8 — Village preview */}
         <VillagePreview village={village} />

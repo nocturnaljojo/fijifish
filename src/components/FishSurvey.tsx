@@ -70,9 +70,8 @@ export default function FishSurvey({ species }: FishSurveyProps) {
   const totalVotes = Object.values(voteCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <section className="px-4 py-12 sm:py-16">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-bg-secondary border border-border-default rounded-2xl p-6 sm:p-8">
+    <div>
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 sm:p-8">
           {/* Header */}
           <div className="mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-ocean-teal/20 bg-ocean-teal/5 text-ocean-teal text-xs font-mono tracking-wider uppercase">
@@ -185,7 +184,6 @@ export default function FishSurvey({ species }: FishSurveyProps) {
             </p>
           )}
         </div>
-      </div>
-    </section>
+    </div>
   );
 }

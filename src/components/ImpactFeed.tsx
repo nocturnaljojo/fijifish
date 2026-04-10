@@ -61,12 +61,24 @@ export default async function ImpactFeed() {
           </Link>
         </div>
 
+        {/* Monthly goal banner */}
+        <div className="mb-8 p-5 rounded-2xl bg-lagoon-green/5 border border-lagoon-green/20">
+          <p className="text-xs font-mono text-lagoon-green uppercase tracking-wider mb-1">
+            April 2026 — Community Goal
+          </p>
+          <p className="text-text-primary text-sm sm:text-base leading-relaxed">
+            Your orders this month are funding a new <strong className="text-lagoon-green">ice machine</strong> for
+            Galoa Village. This allows our fishermen to keep catches fresh for longer, reducing
+            waste and increasing their income.
+          </p>
+        </div>
+
         {/* Stories */}
         <div className="space-y-6">
           {stories.map((story) => (
             <article
               key={story.id}
-              className="flex flex-col sm:flex-row gap-5 sm:gap-8 bg-bg-secondary border border-border-default rounded-2xl overflow-hidden"
+              className="flex flex-col sm:flex-row gap-5 sm:gap-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden"
             >
               {/* Photo — left on desktop, top on mobile */}
               <div className="sm:w-56 sm:shrink-0 aspect-video sm:aspect-auto bg-bg-tertiary flex items-center justify-center relative overflow-hidden">

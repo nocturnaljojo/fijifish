@@ -35,7 +35,7 @@ export default function VillagePreview({
           </p>
         </div>
 
-        <div className="bg-bg-secondary border border-border-default rounded-2xl overflow-hidden max-w-4xl mx-auto">
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Photo placeholder */}
             <div className="relative bg-bg-tertiary aspect-video md:aspect-auto md:min-h-[320px] flex items-center justify-center overflow-hidden">

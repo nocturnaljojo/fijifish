@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 interface CountdownTimerProps {
   targetTimestamp: number;
   className?: string;
+  urgentColor?: string;
 }
 
 function pad(n: number): string {
@@ -24,6 +25,7 @@ function getTimeLeft(targetTs: number) {
 export default function CountdownTimer({
   targetTimestamp,
   className = "",
+  urgentColor,
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetTimestamp));
 
@@ -45,11 +47,13 @@ export default function CountdownTimer({
     );
   }
 
+  const criticalClass = urgentColor ?? "text-sunset-gold";
+
   return (
     <span
       className={`font-mono tabular-nums ${
         isCritical
-          ? "text-sunset-gold animate-pulse"
+          ? `${criticalClass} animate-pulse`
           : "text-ocean-teal"
       } ${className}`}
     >
