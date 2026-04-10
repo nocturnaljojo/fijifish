@@ -10,6 +10,8 @@ import FishSurvey from "@/components/FishSurvey";
 import DeliveryDemandPoll from "@/components/DeliveryDemandPoll";
 import VillagePreview from "@/components/VillagePreview";
 import Footer from "@/components/Footer";
+import SocialProof from "@/components/SocialProof";
+import StickyOrderBar from "@/components/StickyOrderBar";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,14 +161,14 @@ async function getSurveySpecies(): Promise<SurveyRow[]> {
 
 function ComingSoonCard() {
   return (
-    <div className="flex flex-col bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden p-5 justify-center items-center text-center gap-3 min-h-[200px]">
+    <div className="flex flex-col bg-transparent border border-dashed border-white/20 rounded-2xl overflow-hidden p-5 justify-center items-center text-center gap-3 min-h-[200px]">
       <span className="text-3xl opacity-40" aria-hidden="true">🦞</span>
       <div>
         <p className="text-xs font-mono text-deep-purple uppercase tracking-widest mb-1">
           Coming Soon
         </p>
         <h3 className="text-base font-bold text-text-primary mb-2">
-          Lobster &amp; Trout
+          Lobster &amp; Coral Trout
         </h3>
         <p className="text-xs text-text-secondary leading-relaxed max-w-xs mx-auto">
           We add new species when community demand hits 30 votes.
@@ -191,11 +193,6 @@ export default async function Home() {
     getSurveySpecies(),
   ]);
 
-  const currentMonthLabel = new Date().toLocaleDateString("en-AU", {
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <div className="flex flex-col min-h-screen">
       <DeliveryBanner />
@@ -204,13 +201,10 @@ export default async function Home() {
         {/* 1 — Hero */}
         <HeroSection />
 
-        {/* 2 — Delivery zone awareness */}
-        <DeliveryZoneBanner />
+        {/* 2 — Social proof bar */}
+        <SocialProof />
 
-        {/* 3 — Reef to Table: 3-step process */}
-        <ProcessSteps />
-
-        {/* 4 — Seasonal fish grid */}
+        {/* 3 — Seasonal fish grid (directly after hero for conversion) */}
         <section
           id="fish-grid"
           className="px-4 py-12 sm:py-16 scroll-mt-20"
@@ -222,12 +216,13 @@ export default async function Home() {
                   In Season Now
                 </h2>
                 <p className="text-text-secondary text-sm sm:text-base">
-                  Wild-caught from the reefs of Galoa Village — order before the
+                  Wild-caught from Pacific Island reefs — order before the
                   flight window closes.
                 </p>
               </div>
-              <span className="text-xs font-mono text-text-secondary border border-border-default rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto">
-                {currentMonthLabel}
+              <span className="text-xs font-mono text-reef-coral border border-reef-coral/30 rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse inline-block" aria-hidden="true" />
+                NEXT FLIGHT
               </span>
             </div>
 
@@ -259,11 +254,14 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 5 — Galoa animated map */}
-        <GaloaMap />
+        {/* 4 — Reef to Table: 3-step process */}
+        <ProcessSteps />
 
-        {/* 6 — Impact stories feed */}
-        <ImpactFeed />
+        {/* 5 — Delivery zone awareness */}
+        <DeliveryZoneBanner />
+
+        {/* 6 — Galoa animated map */}
+        <GaloaMap />
 
         {/* 7 — Community: survey + demand poll side by side */}
         <section id="survey" className="px-4 py-12 sm:py-16 scroll-mt-20">
@@ -275,11 +273,17 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 8 — Village preview */}
+        {/* 8 — Impact stories feed */}
+        <ImpactFeed />
+
+        {/* 9 — Village preview */}
         <VillagePreview village={village} />
       </main>
 
       <Footer />
+
+      {/* Mobile sticky order bar — appears after scrolling past hero */}
+      <StickyOrderBar />
     </div>
   );
 }

@@ -15,53 +15,70 @@ export default function DeliveryBanner() {
       : "#4fc3f7";
 
   return (
-    <div className="sticky top-0 z-50 bg-bg-primary/95 backdrop-blur-sm border-b border-border-default">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="py-2.5 grid grid-cols-1 sm:grid-cols-3 items-center gap-x-4 gap-y-1 text-xs font-mono uppercase tracking-wider">
+    <div className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md" style={{ background: "rgba(10,15,26,0.97)" }}>
+      <div className="max-w-6xl mx-auto px-4 py-3 sm:py-0">
+        <div className="flex flex-col sm:flex-row sm:items-stretch gap-0 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
 
           {/* Left — next arrival */}
-          <div className="flex items-center gap-2">
-            <span className="text-lagoon-green">🐟</span>
-            <span className="text-text-secondary">Next Arrival:</span>
-            <span className="text-text-primary font-bold">Thu 17 Apr</span>
+          <div className="flex items-center gap-2.5 sm:py-3 py-2 sm:pr-6">
+            <span className="text-lg" aria-hidden="true">✈️</span>
+            <div>
+              <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-text-secondary leading-none mb-0.5">
+                Next Delivery
+              </p>
+              <p className="text-sm font-bold text-text-primary leading-none">
+                Thursday 17 Apr
+              </p>
+            </div>
           </div>
 
-          {/* Centre — cargo capacity bar */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-text-secondary shrink-0">✈️ Cargo:</span>
-            <div className="flex-1 h-1.5 rounded-full bg-border-default overflow-hidden">
+          {/* Centre — cargo bar */}
+          <div className="hidden sm:flex items-center gap-3 sm:py-3 sm:px-6 flex-1">
+            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-text-secondary whitespace-nowrap">
+              Flight Capacity
+            </span>
+            <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: "rgba(30,42,58,0.8)" }}>
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${CARGO_PCT}%`, backgroundColor: barColor }}
               />
             </div>
-            <span style={{ color: barColor }} className="font-bold shrink-0">
+            <span className="text-xs font-mono font-bold whitespace-nowrap" style={{ color: barColor }}>
               {CARGO_PCT}% Full
             </span>
           </div>
 
-          {/* Right — countdown */}
-          <div className="flex items-center gap-1.5 sm:justify-end">
-            <span className="text-reef-coral">🔴</span>
-            <span className="text-text-secondary">Window Closes:</span>
-            <CountdownTimer
-              targetTimestamp={ORDER_CLOSE_TIMESTAMP}
-              className="font-bold"
-              urgentColor="text-reef-coral"
+          {/* Right — countdown — ALWAYS reef-coral, large */}
+          <div className="flex items-center gap-2.5 sm:py-3 sm:pl-6 py-2">
+            <span
+              className="w-2 h-2 rounded-full bg-reef-coral animate-pulse shrink-0"
+              aria-hidden="true"
             />
+            <div>
+              <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-reef-coral/70 leading-none mb-0.5">
+                Catch Window Closes
+              </p>
+              <CountdownTimer
+                targetTimestamp={ORDER_CLOSE_TIMESTAMP}
+                className="text-lg sm:text-xl font-bold leading-none"
+                baseColor="text-reef-coral"
+                urgentColor="text-reef-coral"
+              />
+            </div>
           </div>
+
         </div>
 
-        {/* Mobile: cargo bar row */}
-        <div className="sm:hidden pb-2 flex items-center gap-2 text-xs font-mono uppercase tracking-wider">
-          <span className="text-text-secondary shrink-0">✈️ Cargo:</span>
-          <div className="flex-1 h-1.5 rounded-full bg-border-default overflow-hidden">
+        {/* Mobile: cargo bar */}
+        <div className="sm:hidden pb-2.5 flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
+          <span className="text-text-secondary shrink-0">Cargo</span>
+          <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(30,42,58,0.8)" }}>
             <div
               className="h-full rounded-full"
               style={{ width: `${CARGO_PCT}%`, backgroundColor: barColor }}
             />
           </div>
-          <span style={{ color: barColor }} className="font-bold shrink-0 text-[10px]">
+          <span className="font-bold shrink-0" style={{ color: barColor }}>
             {CARGO_PCT}%
           </span>
         </div>

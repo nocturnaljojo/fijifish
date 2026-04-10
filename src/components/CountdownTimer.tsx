@@ -6,6 +6,7 @@ interface CountdownTimerProps {
   targetTimestamp: number;
   className?: string;
   urgentColor?: string;
+  baseColor?: string;
 }
 
 function pad(n: number): string {
@@ -26,6 +27,7 @@ export default function CountdownTimer({
   targetTimestamp,
   className = "",
   urgentColor,
+  baseColor,
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetTimestamp));
 
@@ -54,7 +56,7 @@ export default function CountdownTimer({
       className={`font-mono tabular-nums ${
         isCritical
           ? `${criticalClass} animate-pulse`
-          : "text-ocean-teal"
+          : (baseColor ?? "text-ocean-teal")
       } ${className}`}
     >
       {timeLeft.days > 0 && <>{timeLeft.days}d </>}

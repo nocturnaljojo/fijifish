@@ -2,6 +2,10 @@
 
 import { motion } from "framer-motion";
 import CapacityBar from "./CapacityBar";
+import CountdownTimer from "./CountdownTimer";
+
+// Matches ORDER_CLOSE_TIMESTAMP in DeliveryBanner
+const ORDER_CLOSE_TIMESTAMP = new Date("2026-04-15T13:59:00.000Z").getTime();
 
 export interface FishCardData {
   id: string;
@@ -27,10 +31,9 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
 
   return (
     <article className="relative md:col-span-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
-      {/* Best seller badge */}
+      {/* 🔥 MOST POPULAR badge */}
       <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-reef-coral/15 border border-reef-coral/30 text-reef-coral text-[10px] font-mono tracking-widest uppercase">
-        <span className="w-1.5 h-1.5 rounded-full bg-reef-coral inline-block" aria-hidden="true" />
-        Best Seller
+        🔥 Most Popular
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2">
@@ -71,25 +74,40 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
               )}
             </p>
             <p className="text-xs text-text-secondary mt-1.5">
-              From {fish.village_name ?? "Galoa Village, Bua"}&nbsp;🇫🇯
+              Caught in Bua Province, Fiji&nbsp;🇫🇯
             </p>
           </div>
 
-          {/* Price — large display */}
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-4xl font-bold text-sunset-gold">
-              {formatPrice(fish.price_aud_cents)}
-            </span>
-            <span className="text-xs font-mono text-text-secondary uppercase tracking-wider">
-              Per kg delivered
-            </span>
+          {/* Price — 48px bold */}
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono font-bold text-sunset-gold" style={{ fontSize: "3rem", lineHeight: 1 }}>
+                {formatPrice(fish.price_aud_cents)}
+              </span>
+              <span className="text-sm font-mono text-text-secondary">/kg</span>
+            </div>
+            <p className="text-xs font-mono text-lagoon-green mt-1 tracking-wide uppercase">
+              ✓ Delivery included — no hidden fees
+            </p>
           </div>
 
           <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
 
+          {/* Mini countdown */}
+          <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
+            <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse shrink-0" aria-hidden="true" />
+            <span>Order closes in</span>
+            <CountdownTimer
+              targetTimestamp={ORDER_CLOSE_TIMESTAMP}
+              className="font-bold text-xs"
+              baseColor="text-reef-coral"
+              urgentColor="text-reef-coral"
+            />
+          </div>
+
           <p className="text-sm text-text-secondary leading-relaxed">
             {fish.cooking_suggestions ??
-              "The taste of home. Firm, white flesh perfect for kokoda, curry, or frying. Caught by hand in Bua."}
+              "Firm, white flesh perfect for kokoda, curry, or pan-frying. Caught to order — never frozen."}
           </p>
 
           <div className="mt-auto">
@@ -102,7 +120,7 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
                   : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
               }`}
             >
-              {isSoldOut ? "Sold Out" : "Add to Order"}
+              {isSoldOut ? "Sold Out" : "Order Walu — A$35/kg"}
             </button>
           </div>
         </div>
@@ -174,7 +192,7 @@ export default function FishCard({
       </div>
 
       {/* Content */}
-      <div className="flex flex-col flex-1 p-5 gap-4">
+      <div className="flex flex-col flex-1 p-5 gap-3">
         <div>
           <h3 className="text-xl font-bold text-text-primary leading-snug">{displayName}</h3>
           {(subName ?? fish.name_scientific) && (
@@ -184,35 +202,56 @@ export default function FishCard({
               {fish.name_scientific && <em className="text-xs opacity-70">{fish.name_scientific}</em>}
             </p>
           )}
-          <p className="text-xs text-text-secondary mt-1.5">
-            From {fish.village_name ?? "Galoa Village, Bua"}&nbsp;🇫🇯
-          </p>
         </div>
 
-        <div className="font-mono text-2xl font-bold text-sunset-gold" aria-label={`Price: ${formatPrice(fish.price_aud_cents)}/kg`}>
-          {formatPrice(fish.price_aud_cents)}<span className="text-sm font-normal text-text-secondary">/kg</span>
+        <div>
+          <div className="font-mono text-2xl font-bold text-sunset-gold" aria-label={`Price: ${formatPrice(fish.price_aud_cents)}/kg`}>
+            {formatPrice(fish.price_aud_cents)}<span className="text-sm font-normal text-text-secondary">/kg</span>
+          </div>
+          <p className="text-[10px] font-mono text-lagoon-green mt-0.5 uppercase tracking-wide">
+            ✓ Delivery included
+          </p>
         </div>
 
         <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
 
-        {fish.cooking_suggestions && (
-          <p className="text-xs text-text-secondary italic leading-relaxed line-clamp-2">
-            {fish.cooking_suggestions}
-          </p>
-        )}
+        {/* Mini countdown */}
+        <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse shrink-0" aria-hidden="true" />
+          <CountdownTimer
+            targetTimestamp={ORDER_CLOSE_TIMESTAMP}
+            className="font-bold text-[10px]"
+            baseColor="text-reef-coral"
+            urgentColor="text-reef-coral"
+          />
+          <span>left to order</span>
+        </div>
 
         <div className="mt-auto pt-1">
-          <button
-            type="button"
-            disabled={isSoldOut}
-            className={`w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] transition-all ${
-              isSoldOut
-                ? "bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
-                : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
-            }`}
-          >
-            {isSoldOut ? "Sold Out" : "Add to Order"}
-          </button>
+          {isSoldOut ? (
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled
+                className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
+              >
+                Sold Out
+              </button>
+              <button
+                type="button"
+                className="w-full py-2 px-4 rounded-lg font-medium text-xs min-h-[36px] border border-ocean-teal/30 text-ocean-teal hover:bg-ocean-teal/5 transition-colors"
+              >
+                Notify me next flight
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Add to Order
+            </button>
+          )}
         </div>
       </div>
     </motion.article>
