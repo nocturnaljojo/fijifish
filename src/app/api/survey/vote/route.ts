@@ -32,7 +32,16 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === "23505") {
-        return NextResponse.json({ already_voted: true });
+        // Already voted — still return current count
+        const { data: summary } = await supabase
+          .from("fish_interest_summary")
+          .select("vote_count")
+          .eq("fish_species_id", fish_species_id)
+          .maybeSingle();
+        return NextResponse.json({
+          already_voted: true,
+          new_vote_count: summary?.vote_count ?? null,
+        });
       }
       console.error("[survey/vote] insert error:", error);
       return NextResponse.json(
@@ -41,7 +50,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Return updated vote count so client can update UI without a refetch
+    const { data: summary } = await supabase
+      .from("fish_interest_summary")
+      .select("vote_count")
+      .eq("fish_species_id", fish_species_id)
+      .maybeSingle();
+
+    return NextResponse.json({
+      success: true,
+      new_vote_count: summary?.vote_count ?? null,
+    });
   } catch (err) {
     console.error("[survey/vote] unexpected error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

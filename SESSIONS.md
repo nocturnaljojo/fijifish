@@ -33,6 +33,42 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session C — 2026-04-11 — Gamification: unlock board for fish species + delivery zones
+
+### Concept
+Replace greyed-out fish cards with an engagement game loop: only Walu is purchasable; all other species are "locked" and visible as a leaderboard. Users vote to unlock species, which requires registration. This turns browsing into community participation.
+
+### DB changes (via Supabase MCP)
+- `fish_species.unlock_status TEXT DEFAULT 'locked'` — CHECK IN ('available', 'locked', 'coming_soon')
+- `fish_species.unlock_votes_target INTEGER DEFAULT 30`
+- Walu set to `available`; all 7 other species set to `locked`
+
+### New components
+- `src/components/UnlockBoard.tsx` — game-board leaderboard with progress bars, vote buttons, sorted by votes descending; shows 🎉 UNLOCKED animation when votes hit target; auth-gated voting
+- `src/components/AuthPromptModal.tsx` — framer-motion slide-up bottom sheet (mobile) / centered modal (desktop) for unauthenticated vote attempts
+- `src/components/UnlockCelebration.tsx` — localStorage-based toast: shows 🎉 when a fish the user voted for gets unlocked; exports `recordVoteInStorage(id)`
+
+### Updated components
+- `src/app/page.tsx` — `getAllFish()` replaces `getSeasonalFish()`: splits fish into `availableFish` (unlock_status=available, in season) + `lockedFish` (locked/coming_soon); removes `FishSurvey` and `ComingSoonCard`; adds `UnlockBoard` section after fish grid; adds `UnlockCelebration` at bottom; uses `auth()` for `isSignedIn` prop
+- `src/app/api/survey/vote/route.ts` — now returns `new_vote_count` from `fish_interest_summary` after insert (and on `already_voted`), so client can update UI without refetch
+- `src/components/DeliveryDemandPoll.tsx` — header/description updated to match unlock mechanic: "🗺️ UNLOCK YOUR AREA" + "When 20 people register, we start delivering there"
+
+### Removed from page.tsx
+- `FishSurvey` import and usage (replaced by UnlockBoard)
+- `ComingSoonCard` (replaced by UnlockBoard teaser rows)
+- Old `getSeasonalFish` function (replaced by `getAllFish`)
+- Old `#survey` section (DeliveryDemandPoll now stands alone in `#delivery-demand`)
+
+### Pre-commit: tsc 0 errors · lint 0 errors · build ✓ 18 routes
+
+### Next up
+- [ ] Set Clerk session token (see Known Issue #3) — auth-gated voting blocked until this is done
+- [ ] Admin: add unlock_status toggle in fish/pricing panel (to unlock fish via admin UI)
+- [ ] Wire realtime vote counts via Supabase realtime subscription
+- [ ] Cart + Stripe checkout (AU buyers only)
+
+---
+
 ## Session B — 2026-04-11 — Admin panel + homepage wired to live DB
 
 ### Changes

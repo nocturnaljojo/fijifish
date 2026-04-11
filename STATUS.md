@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session B)
+Last updated: 2026-04-11 (Session C)
 
 ---
 
@@ -89,6 +89,9 @@ Last updated: 2026-04-11 (Session B)
 | `admin/pricing/InventoryManager.tsx` | Inline-editable price/capacity table |
 | `admin/photos/PhotoQueue.tsx` | Photo cards with approve/reject |
 | `admin/stories/StoryManager.tsx` | Story CRUD with publish toggle |
+| `UnlockBoard.tsx` | Leaderboard of locked fish with vote progress bars + auth gate |
+| `AuthPromptModal.tsx` | Slide-up auth prompt for unauthenticated voters (framer-motion) |
+| `UnlockCelebration.tsx` | localStorage-based unlock toast + `recordVoteInStorage` helper |
 
 ---
 
@@ -99,6 +102,7 @@ Last updated: 2026-04-11 (Session B)
 | `fish_species` | 001 | 8 species seeded, all is_active=true |
 | `seasons` | 001 | All month_start=1, month_end=12 (year-round) |
 | `villages` | 001 | Galoa, Bua seeded |
+| `fish_species` | 001 | `unlock_status` + `unlock_votes_target` columns added; Walu=available, 7 others=locked |
 | `flight_windows` | 001 | FJ911 seeded (2026-04-17, status=open) |
 | `delivery_zones` | 001 | Riverina zones |
 | `customers` | 001 | Clerk user sync target (webhook not yet built) |

@@ -116,13 +116,14 @@ export default function DeliveryDemandPoll({ species }: DeliveryDemandPollProps)
                 className="w-1.5 h-1.5 rounded-full bg-sunset-gold inline-block"
                 aria-hidden="true"
               />
-              Delivery Expansion
+              Unlock Your Area
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-text-primary mb-2">
-              Don&apos;t see your area? Tell us where you are
+              🗺️ Help unlock delivery to your suburb
             </h2>
             <p className="text-text-secondary text-sm">
-              We&apos;re expanding. The postcodes with the most demand get added first.
+              When 20 people register from your area, we start delivering there.
+              The postcodes with the most demand get unlocked first.
             </p>
           </div>
 
@@ -158,12 +159,12 @@ export default function DeliveryDemandPoll({ species }: DeliveryDemandPollProps)
                   <span className="text-3xl" aria-hidden="true">🙌</span>
                   <div>
                     <p className="text-text-primary font-semibold">
-                      Thanks! We&apos;ve noted {submittedSuburb}.
+                      ✅ {submittedSuburb} registered!
                     </p>
                     <p className="text-text-secondary text-sm mt-1">
                       {areaCount && areaCount > 1
-                        ? `${areaCount} people in your area want fresh fish too. We'll notify you when we expand there.`
-                        : "You're the first from your area — spread the word!"}
+                        ? `${areaCount} people registered from your area. We'll notify you when it unlocks.`
+                        : "You're the first from your area — share with friends to unlock faster!"}
                     </p>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { auth } from "@clerk/nextjs/server";
 import { createPublicSupabaseClient } from "@/lib/supabase";
 import {
   getActiveFlightWindow,
@@ -19,7 +20,8 @@ import FishCard, { type FishCardData } from "@/components/FishCard";
 import ProcessSteps from "@/components/ProcessSteps";
 import GaloaMap from "@/components/GaloaMap";
 import ImpactFeed from "@/components/ImpactFeed";
-import FishSurvey from "@/components/FishSurvey";
+import UnlockBoard, { type LockedFish } from "@/components/UnlockBoard";
+import UnlockCelebration from "@/components/UnlockCelebration";
 import DeliveryDemandPoll from "@/components/DeliveryDemandPoll";
 import VillagePreview from "@/components/VillagePreview";
 import Footer from "@/components/Footer";
@@ -35,6 +37,8 @@ type FishRow = {
   name_english: string;
   name_scientific: string | null;
   cooking_suggestions: string | null;
+  unlock_status: string;
+  unlock_votes_target: number;
   seasons: { month_start: number; month_end: number }[];
 };
 
@@ -91,7 +95,6 @@ function resolveInventory(
   nameEnglish: string,
   dbInventory: InventoryRow[],
 ): { price_aud_cents: number; available_kg: number; total_kg: number } {
-  // Prefer DB inventory if available for this species
   const dbRow = dbInventory.find((r) => r.fish_species_id === fishId);
   if (dbRow) {
     return {
@@ -100,7 +103,6 @@ function resolveInventory(
       total_kg: Number(dbRow.total_capacity_kg),
     };
   }
-  // Fall back to hardcoded test data
   return (
     (nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
     TEST_INVENTORY[nameEnglish] ??
@@ -120,34 +122,63 @@ function sortFish(fish: FishCardData[]): FishCardData[] {
 
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 
-async function getSeasonalFish(dbInventory: InventoryRow[]): Promise<FishCardData[]> {
+async function getAllFish(dbInventory: InventoryRow[]): Promise<{
+  availableFish: FishCardData[];
+  lockedFish: LockedFish[];
+}> {
   try {
     const supabase = createPublicSupabaseClient();
-    const { data, error } = await supabase
-      .from("fish_species")
-      .select(
-        "id, name_fijian, name_english, name_scientific, cooking_suggestions, seasons(month_start, month_end)",
-      )
-      .eq("is_active", true);
+    const [fishRes, votesRes] = await Promise.all([
+      supabase
+        .from("fish_species")
+        .select(
+          "id, name_fijian, name_english, name_scientific, cooking_suggestions, unlock_status, unlock_votes_target, seasons(month_start, month_end)",
+        )
+        .eq("is_active", true),
+      supabase
+        .from("fish_interest_summary")
+        .select("fish_species_id, vote_count"),
+    ]);
 
-    if (error || !data) return [];
+    if (fishRes.error || !fishRes.data) return { availableFish: [], lockedFish: [] };
+
+    const voteMap = new Map<string, number>(
+      ((votesRes.data ?? []) as { fish_species_id: string; vote_count: number }[]).map(
+        (r) => [r.fish_species_id, r.vote_count],
+      ),
+    );
 
     const currentMonth = new Date().getMonth() + 1;
+    const availableFish: FishCardData[] = [];
+    const lockedFish: LockedFish[] = [];
 
-    const seasonal = (data as FishRow[])
-      .filter((fish) => isInSeason(fish.seasons ?? [], currentMonth))
-      .map((fish) => ({
-        id: fish.id,
-        name_fijian: fish.name_fijian,
-        name_english: fish.name_english,
-        name_scientific: fish.name_scientific,
-        cooking_suggestions: fish.cooking_suggestions,
-        ...resolveInventory(fish.id, fish.name_fijian, fish.name_english, dbInventory),
-      }));
+    for (const fish of fishRes.data as FishRow[]) {
+      if (fish.unlock_status === "available") {
+        if (isInSeason(fish.seasons ?? [], currentMonth)) {
+          availableFish.push({
+            id: fish.id,
+            name_fijian: fish.name_fijian,
+            name_english: fish.name_english,
+            name_scientific: fish.name_scientific,
+            cooking_suggestions: fish.cooking_suggestions,
+            ...resolveInventory(fish.id, fish.name_fijian, fish.name_english, dbInventory),
+          });
+        }
+      } else if (fish.unlock_status === "locked" || fish.unlock_status === "coming_soon") {
+        lockedFish.push({
+          id: fish.id,
+          name_fijian: fish.name_fijian,
+          name_english: fish.name_english,
+          name_scientific: fish.name_scientific,
+          unlock_votes_target: fish.unlock_votes_target ?? 30,
+          current_votes: voteMap.get(fish.id) ?? 0,
+        });
+      }
+    }
 
-    return sortFish(seasonal);
+    return { availableFish: sortFish(availableFish), lockedFish };
   } catch {
-    return [];
+    return { availableFish: [], lockedFish: [] };
   }
 }
 
@@ -179,36 +210,12 @@ async function getSurveySpecies(): Promise<SurveyRow[]> {
   }
 }
 
-// ── Coming Soon Card ──────────────────────────────────────────────────────────
-
-function ComingSoonCard() {
-  return (
-    <div className="flex flex-col bg-transparent border border-dashed border-white/20 rounded-2xl overflow-hidden p-5 justify-center items-center text-center gap-3 min-h-[200px]">
-      <span className="text-3xl opacity-40" aria-hidden="true">🦞</span>
-      <div>
-        <p className="text-xs font-mono text-deep-purple uppercase tracking-widest mb-1">
-          Coming Soon
-        </p>
-        <h3 className="text-base font-bold text-text-primary mb-2">
-          Lobster &amp; Coral Trout
-        </h3>
-        <p className="text-xs text-text-secondary leading-relaxed max-w-xs mx-auto">
-          We add new species when community demand hits 30 votes.
-        </p>
-      </div>
-      <a
-        href="#survey"
-        className="text-xs text-deep-purple hover:text-[#e1bee7] transition-colors font-medium"
-      >
-        Vote for next fish →
-      </a>
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
+
   // Fetch active flight window first — it drives capacity and countdown data
   const activeWindow = await getActiveFlightWindow();
   const dbInventory = activeWindow
@@ -216,8 +223,8 @@ export default async function Home() {
     : [];
 
   // Fetch the rest in parallel
-  const [fishList, village, surveySpecies] = await Promise.all([
-    getSeasonalFish(dbInventory),
+  const [{ availableFish, lockedFish }, village, surveySpecies] = await Promise.all([
+    getAllFish(dbInventory),
     getGaloaVillage(),
     getSurveySpecies(),
   ]);
@@ -233,6 +240,13 @@ export default async function Home() {
   const nextDeliveryLabel = activeWindow
     ? formatFlightDate(activeWindow.flight_date)
     : FLIGHT_CONFIG.nextDeliveryLabel;
+
+  // Available fish for celebration toast (compare against user's localStorage votes)
+  const availableFishForCelebration = availableFish.map((f) => ({
+    id: f.id,
+    name_fijian: f.name_fijian,
+    name_english: f.name_english,
+  }));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -250,7 +264,7 @@ export default async function Home() {
         {/* 2 — Social proof bar */}
         <SocialProof />
 
-        {/* 3 — Seasonal fish grid */}
+        {/* 3 — Available fish — orderable now */}
         <section id="fish-grid" className="px-4 py-12 sm:py-16 scroll-mt-20">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
@@ -274,7 +288,7 @@ export default async function Home() {
               cargoPercent={cargoPercent}
             />
 
-            {fishList.length === 0 ? (
+            {availableFish.length === 0 ? (
               <div className="py-20 text-center border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm">
                 <span className="text-5xl block mb-4" aria-hidden="true">🌊</span>
                 <p className="text-text-primary font-semibold text-lg mb-2">
@@ -286,7 +300,7 @@ export default async function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-                {fishList.map((fish, i) => {
+                {availableFish.map((fish, i) => {
                   const isWalu =
                     fish.name_fijian?.toLowerCase() === "walu" ||
                     fish.name_english.toLowerCase() === "walu";
@@ -300,41 +314,49 @@ export default async function Home() {
                     />
                   );
                 })}
-                <ComingSoonCard />
               </div>
             )}
           </div>
         </section>
 
-        {/* 4 — Reef to Table: 3-step process */}
+        {/* 4 — Unlock board — community voting for locked species */}
+        {lockedFish.length > 0 && (
+          <section id="unlock" className="px-4 pb-12 sm:pb-16 scroll-mt-20">
+            <div className="max-w-6xl mx-auto">
+              <UnlockBoard lockedFish={lockedFish} isSignedIn={isSignedIn} />
+            </div>
+          </section>
+        )}
+
+        {/* 5 — Reef to Table: 3-step process */}
         <ProcessSteps />
 
-        {/* 5 — Delivery zone awareness */}
+        {/* 6 — Delivery zone awareness */}
         <DeliveryZoneBanner />
 
-        {/* 6 — Galoa animated map */}
+        {/* 7 — Galoa animated map */}
         <GaloaMap />
 
-        {/* 7 — Community: survey + demand poll side by side */}
-        <section id="survey" className="px-4 py-12 sm:py-16 scroll-mt-20">
+        {/* 8 — Delivery area unlock poll */}
+        <section id="delivery-demand" className="px-4 py-12 sm:py-16 scroll-mt-20">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <FishSurvey species={surveySpecies} />
-              <DeliveryDemandPoll species={surveySpecies} />
-            </div>
+            <DeliveryDemandPoll species={surveySpecies} />
           </div>
         </section>
 
-        {/* 8 — Impact stories feed */}
+        {/* 9 — Impact stories feed */}
         <ImpactFeed />
 
-        {/* 9 — Village preview */}
+        {/* 10 — Village preview */}
         <VillagePreview village={village} />
       </main>
 
       <Footer />
 
       <StickyOrderBar cargoPercent={cargoPercent} />
+
+      {/* Unlock celebration toast — shows when a voted fish gets unlocked */}
+      <UnlockCelebration availableFish={availableFishForCelebration} />
     </div>
   );
 }
