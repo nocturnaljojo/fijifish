@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session D)
+Last updated: 2026-04-11 (Session E)
 
 ---
 
@@ -38,7 +38,7 @@ Last updated: 2026-04-11 (Session D)
 | `/order/success` | Post-payment confirmation + 4-step timeline | LIVE |
 | `/supply-chain` | Supply chain story (stub) | LIVE |
 | `/impact` | Village impact stories (stub) | LIVE |
-| `/account` | Buyer account | NOT BUILT |
+| `/account` | Buyer account — orders, history, preferences | LIVE |
 | `/track/[orderId]` | Shipment tracking | NOT BUILT |
 
 ---

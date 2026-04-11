@@ -99,7 +99,7 @@ export default function Navbar() {
                 <UserButton.Link
                   label="Order History"
                   labelIcon={<span>📦</span>}
-                  href="/account/orders"
+                  href="/account"
                 />
                 {isAdmin && (
                   <UserButton.Link

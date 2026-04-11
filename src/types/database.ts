@@ -106,9 +106,7 @@ export interface Customer {
 export type OrderStatus =
   | "pending"
   | "confirmed"
-  | "packing"
-  | "shipped"
-  | "in_transit"
+  | "paid"
   | "out_for_delivery"
   | "delivered"
   | "cancelled"
@@ -134,7 +132,8 @@ export interface OrderItem {
   fish_species_id: string;
   village_id: string;
   quantity_kg: number;
-  price_aud_cents: number;
+  price_per_kg_aud_cents: number;
+  price_per_kg_fjd_cents: number;
   created_at: string;
 }
 

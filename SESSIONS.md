@@ -33,6 +33,42 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session E — 2026-04-11 — My Account page: orders, history, preferences
+
+### New files
+- `src/app/account/page.tsx` — server component; auth-gated (→ /sign-in); fetches user, customer, orders+items, voted fish from Supabase via service role; passes as props
+- `src/app/account/AccountContent.tsx` — client component; avatar initials, 3 sections
+
+### Section 1: Active Orders
+- Queries orders WHERE NOT IN (delivered, cancelled, refunded)
+- Order card: short ref (#LAST8CHARS), status badge, items list with fish name + kg + price, total
+- Status badges: pending=amber, confirmed/paid=teal, out_for_delivery=lagoon-green
+
+### Section 2: Order History
+- Queries orders WHERE IN (delivered, cancelled, refunded)
+- Compact card (items collapsed, count shown)
+- "Reorder" button on delivered orders: adds all items to cart via zustand, opens drawer
+
+### Section 3: Preferences
+- Delivery address from customers.delivery_address
+- Phone from users.phone
+- Fish votes: which species the user voted to unlock (pills with deep-purple badge)
+- Referral code: "Coming soon" teaser
+
+### Also fixed
+- `src/types/database.ts`: OrderItem.price_per_kg_aud_cents (was wrong column name price_aud_cents); OrderStatus aligned to actual DB CHECK constraint
+- `src/components/Navbar.tsx`: "Order History" link updated from /account/orders to /account
+
+### Pre-commit: lint 0 · tsc 0 · build ✓ 27 routes
+
+### Next up
+- [ ] Add STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET to Vercel
+- [ ] Create increment_reserved_kg Supabase RPC
+- [ ] Admin: unlock_status toggle in pricing panel
+- [ ] Supplier portal (Phase 2)
+
+---
+
 ## Session D — 2026-04-11 — Cart + Stripe checkout, page reduction, premium placeholders
 
 ### P1: Premium gradient placeholders (FishCard.tsx)
