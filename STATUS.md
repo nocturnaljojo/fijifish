@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session 5)
+Last updated: 2026-04-11 (Session 6)
 
 ---
 
@@ -122,6 +122,9 @@ Last updated: 2026-04-11 (Session 5)
 | `src/lib/roles.ts` | LIVE | getUserRole, requireRole, getVillageId |
 | `src/lib/roles-client.ts` | LIVE | useRole() hook |
 | `src/lib/pricing.ts` | LIVE | AUD/FJD detection, isAustralian() |
+| `src/lib/config.ts` | LIVE | All configurable constants (FLIGHT_CONFIG, CARGO_CONFIG, THRESHOLDS, etc.) |
+| `src/lib/api-helpers.ts` | LIVE | withErrorHandling, requireAuth, requireAdmin, errorResponse |
+| `src/types/database.ts` | LIVE | TypeScript types for all Supabase tables |
 | `src/proxy.ts` | LIVE | Role-based middleware |
 | `src/lib/order-engine.ts` | NOT BUILT | Order window state machine |
 | `src/lib/route-optimiser.ts` | NOT BUILT | Delivery route optimisation |

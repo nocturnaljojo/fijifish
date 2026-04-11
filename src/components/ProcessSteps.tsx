@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ShoppingCart, Fish, Truck, type LucideIcon } from "lucide-react";
+import { DELIVERY_CONFIG, FLIGHT_CONFIG } from "@/lib/config";
 
 // ── Step definitions ──────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ const STEPS: StepData[] = [
     accentColor: "#4fc3f7",
     title: "You Pre-Order",
     body: "Order by Monday night. Pick your fish, choose your quantity. Payment secures your spot on the flight — once cargo space is full or the catch window closes, you'll have to wait for the next delivery.",
-    detail: "🔴 Window closes Monday 11:59 PM AEST",
+    detail: `🔴 Window closes ${DELIVERY_CONFIG.orderCloseDay} ${DELIVERY_CONFIG.orderCloseTime}`,
   },
   {
     number: "02",
@@ -38,7 +39,7 @@ const STEPS: StepData[] = [
     accentColor: "#ffab40",
     title: "Thursday Delivery",
     body: "Your vacuum-sealed fillets arrive at your door in the Riverina. Reef to table in under 48 hours.",
-    detail: "✈️ FJ911 Nadi → Sydney → Riverina",
+    detail: `✈️ ${FLIGHT_CONFIG.flightNumber} ${FLIGHT_CONFIG.route}`,
     cta: true,
   },
 ];

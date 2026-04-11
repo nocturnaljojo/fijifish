@@ -1,6 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__supabase__execute_sql",
+      "Bash(cp src/components/DeliveryBanner.tsx src/components/DeliveryBanner.old2.tsx)",
+      "Bash(cp src/components/FishCard.tsx src/components/FishCard.old2.tsx)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

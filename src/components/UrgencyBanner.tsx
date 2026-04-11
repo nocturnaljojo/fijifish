@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FLIGHT_CONFIG, CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
 
-const ORDER_CLOSE_TIMESTAMP = new Date("2026-04-15T13:59:00.000Z").getTime();
-const CARGO_PCT = 72;
-const TOTAL_KG = 100;
+const ORDER_CLOSE_TIMESTAMP = FLIGHT_CONFIG.orderCloseAt;
+const CARGO_PCT = CARGO_CONFIG.capacityPercent;
+const TOTAL_KG = CARGO_CONFIG.totalKg;
 
 function getTimeLeft() {
   const diff = Math.max(0, ORDER_CLOSE_TIMESTAMP - Date.now());
@@ -22,8 +23,8 @@ export default function UrgencyBanner() {
     return () => clearInterval(timer);
   }, []);
 
-  const isCargoUrgent = CARGO_PCT >= 80;
-  const isWindowUrgent = timeLeft.hours < 12 && timeLeft.totalSeconds > 0;
+  const isCargoUrgent = CARGO_PCT >= THRESHOLDS.cargoAlmostFull;
+  const isWindowUrgent = timeLeft.hours < THRESHOLDS.countdownUrgentHours && timeLeft.totalSeconds > 0;
 
   // Only show when at least one urgency condition is met
   if (!isCargoUrgent && !isWindowUrgent) return null;

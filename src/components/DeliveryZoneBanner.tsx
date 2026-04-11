@@ -1,20 +1,12 @@
-const ZONES = [
-  "Wagga Wagga",
-  "Griffith",
-  "Leeton",
-  "Narrandera",
-  "Canberra",
-  "Goulburn",
-  "Young",
-  "Cowra",
-  "Eden",
-];
+import { DELIVERY_CONFIG } from "@/lib/config";
+
+const ZONES = DELIVERY_CONFIG.zones;
 
 // Hardcoded teaser data until demand poll is wired realtime
 const DEMAND_TEASERS = [
-  { suburb: "Newcastle", count: 15, target: 20 },
-  { suburb: "Albury", count: 11, target: 20 },
-  { suburb: "Orange", count: 7, target: 20 },
+  { suburb: "Newcastle", count: 15, target: DELIVERY_CONFIG.zoneUnlockTarget },
+  { suburb: "Albury", count: 11, target: DELIVERY_CONFIG.zoneUnlockTarget },
+  { suburb: "Orange", count: 7, target: DELIVERY_CONFIG.zoneUnlockTarget },
 ];
 
 export default function DeliveryZoneBanner() {

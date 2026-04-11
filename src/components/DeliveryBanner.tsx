@@ -1,15 +1,13 @@
 import CountdownTimer from "./CountdownTimer";
+import { FLIGHT_CONFIG, CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
 
-// Thursday 17 April delivery. Order window closes Tuesday 15 April 23:59 AEST.
-const ORDER_CLOSE_TIMESTAMP = new Date("2026-04-15T13:59:00.000Z").getTime();
-
-// Total cargo capacity — hardcoded until inventory_availability wired in Phase 1b
-const CARGO_PCT = 72;
+const ORDER_CLOSE_TIMESTAMP = FLIGHT_CONFIG.orderCloseAt;
+const CARGO_PCT = CARGO_CONFIG.capacityPercent;
 
 function cargoLabel(pct: number): string {
-  if (pct >= 95) return `${pct}% Full — Last spots!`;
-  if (pct >= 80) return `${pct}% Full — Almost gone!`;
-  if (pct >= 50) return `${pct}% Full — Filling fast`;
+  if (pct >= THRESHOLDS.cargoLastSpots) return `${pct}% Full — Last spots!`;
+  if (pct >= THRESHOLDS.cargoAlmostFull) return `${pct}% Full — Almost gone!`;
+  if (pct >= THRESHOLDS.cargoFillingFast) return `${pct}% Full — Filling fast`;
   return `${pct}% Full — Secure your spot`;
 }
 
@@ -34,7 +32,7 @@ export default function DeliveryBanner() {
                 Next Delivery
               </p>
               <p className="text-sm font-bold text-text-primary leading-none">
-                Thursday 17 Apr
+                {FLIGHT_CONFIG.nextDeliveryLabel}
               </p>
             </div>
           </div>

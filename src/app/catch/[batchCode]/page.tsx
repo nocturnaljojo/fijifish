@@ -2,6 +2,7 @@
 // Anyone with the link can view the catch details for their order.
 // Full page built in Session B when admin panel can create batches.
 
+import Link from "next/link";
 import { createPublicSupabaseClient } from "@/lib/supabase";
 
 type Props = {
@@ -58,12 +59,12 @@ export default async function CatchTracePage({ params }: Props) {
           <p className="text-xs text-text-secondary">
             Wild-caught in Fiji · Vacuum-sealed · Air-freighted to Australia
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block mt-3 text-xs text-ocean-teal hover:underline"
           >
             ← Back to FijiFish
-          </a>
+          </Link>
         </div>
       </div>
     </div>

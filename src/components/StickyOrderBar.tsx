@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
 
-// Matches CARGO_PCT in DeliveryBanner
-const CARGO_PCT = 72;
+const CARGO_PCT = CARGO_CONFIG.capacityPercent;
 
 export default function StickyOrderBar() {
   const [visible, setVisible] = useState(false);
@@ -17,7 +17,7 @@ export default function StickyOrderBar() {
   }, []);
 
   const ctaLabel =
-    CARGO_PCT >= 80 ? "Order Now — Almost Full!" : "Order Before Window Closes";
+    CARGO_PCT >= THRESHOLDS.cargoAlmostFull ? "Order Now — Almost Full!" : "Order Before Window Closes";
 
   return (
     <div

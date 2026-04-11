@@ -84,10 +84,9 @@ export default function FlightSchedule() {
   const [todayStr, setTodayStr] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  // Set date on client only to avoid hydration mismatch
-  useEffect(() => {
-    setTodayStr(todayLocalStr());
-  }, []);
+  // Set date on client only to avoid hydration mismatch (intentional pattern)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setTodayStr(todayLocalStr()); }, []);
 
   if (!todayStr) {
     // Skeleton while hydrating

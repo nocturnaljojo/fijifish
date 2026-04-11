@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import CapacityBar from "./CapacityBar";
 import CountdownTimer from "./CountdownTimer";
+import { FLIGHT_CONFIG, THRESHOLDS } from "@/lib/config";
 
-// Matches ORDER_CLOSE_TIMESTAMP in DeliveryBanner
-const ORDER_CLOSE_TIMESTAMP = new Date("2026-04-15T13:59:00.000Z").getTime();
+const ORDER_CLOSE_TIMESTAMP = FLIGHT_CONFIG.orderCloseAt;
 
 export interface FishCardData {
   id: string;
@@ -257,7 +257,7 @@ export default function FishCard({
               >
                 Order Now
               </button>
-              {fish.available_kg < fish.total_kg * 0.5 && (
+              {fish.available_kg < fish.total_kg * (THRESHOLDS.cargoFillingFast / 100) && (
                 <p className="text-xs text-text-secondary text-center font-mono">
                   Limited cargo space remaining
                 </p>

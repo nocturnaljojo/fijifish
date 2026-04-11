@@ -2,12 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { SOCIAL_PROOF_STATS } from "@/lib/config";
 
-const STATS = [
-  { value: 47, suffix: "", label: "people registered" },
-  { value: 8, suffix: "", label: "delivery zones" },
-  { value: 3500, suffix: "km", label: "reef to door" },
-] as const;
+const STATS = SOCIAL_PROOF_STATS;
 
 function CountUp({ target, suffix }: { target: number; suffix: string }) {
   const [count, setCount] = useState(0);

@@ -22,6 +22,38 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session 6 — 2026-04-11 — Code health: shared config, types, API helpers, cleanup
+
+### Changes
+- `src/lib/config.ts` — created: single source of truth for all hardcoded values (FLIGHT_CONFIG, CARGO_CONFIG, DELIVERY_CONFIG, PRICING_CONFIG, THRESHOLDS, SOCIAL_PROOF_STATS)
+- `src/types/database.ts` — created: TypeScript types for all Supabase tables (FishSpecies, FlightWindow, InventoryAvailability, Order, CatchBatch, etc.)
+- `src/lib/api-helpers.ts` — created: `withErrorHandling`, `errorResponse`, `successResponse`, `requireAuth`, `requireAdmin`, `requireSupplierOrAdmin`, `AuthError`
+- `src/components/DeliveryBanner.tsx` — config imports replace hardcoded values
+- `src/components/UrgencyBanner.tsx` — config imports replace hardcoded values
+- `src/components/StickyOrderBar.tsx` — config imports replace hardcoded values
+- `src/components/FishCard.tsx` — config imports replace hardcoded ORDER_CLOSE_TIMESTAMP and capacity threshold
+- `src/components/DeliveryZoneBanner.tsx` — ZONES and zone unlock target from config
+- `src/components/ProcessSteps.tsx` — order close day/time and flight route from config
+- `src/components/SocialProof.tsx` — stats array from config
+- `src/app/catch/[batchCode]/page.tsx` — `<a>` → `<Link>` (lint fix)
+- `src/components/FlightSchedule.tsx` — eslint-disable comment for intentional setState pattern
+- `eslint.config.mjs` — added `no-console`, `no-explicit-any`, `no-unused-vars` rules; tests/ excluded from no-console
+- `CLAUDE.md` — added Architecture patterns + Regression prevention sections; skills 13→14; added `/pre-commit`
+- `.claude/skills/pre-commit/SKILL.md` — created: full pre-commit checklist
+- Deleted 8 dead files: all `.old.tsx` backups + unused `ReefToTable.tsx`
+- Verified: `npm run lint` → 0 errors/warnings; `npx tsc --noEmit` → 0 errors; `npm run build` → success
+
+### Next up (Phase 1b)
+- [ ] Set Clerk session token (see Known Issue #3)
+- [ ] Set Vercel env vars (see Known Issue #4)
+- [ ] Wire `inventory_availability` table for real prices/capacity per flight window
+- [ ] Admin panel: capacity + price management, flight window CRUD
+- [ ] Supabase RLS policies (Clerk JWT)
+- [ ] Cart + Stripe checkout (AU buyers only)
+- [ ] Realtime capacity subscriptions
+
+---
+
 ## Session 5 — 2026-04-11 — Documentation audit
 
 ### Changes

@@ -78,6 +78,22 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - Photo compression client-side to max 1MB
 - Tests for: order engine, seasonal filter, route optimiser, price logic, capacity
 
+## Architecture patterns
+- All configurable values → `src/lib/config.ts` — NEVER hardcode in components
+- All database types → `src/types/database.ts` — NEVER define inline
+- All API routes → use `withErrorHandling` from `src/lib/api-helpers.ts`
+- Public page queries → `createPublicSupabaseClient()` — NEVER service role
+- Admin API routes → `createServerSupabaseClient()` after `requireAdmin()` check
+- Components receive data via props from page.tsx — NEVER fetch inside components (except client-side interactions like voting)
+- Before EVERY commit → run the `/pre-commit` skill checklist
+
+## Regression prevention
+- NEVER delete a working component without checking all imports first
+- NEVER modify a component's props without checking all parents that pass those props
+- NEVER change a Supabase table without checking all queries that reference it
+- When fixing a bug, ask: "what else uses this code?" before changing it
+- After any change to page.tsx, verify the fish grid still renders on localhost:3000
+
 ## Red lines
 - NEVER use Supabase Auth — all auth is Clerk
 - NEVER auto-convert AUD to FJD — prices are independent
@@ -93,7 +109,7 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - NEVER skip Spam Act 2003 compliance on broadcasts
 - NEVER use createServerSupabaseClient() in public page components
 
-## Skills (13)
+## Skills (14)
 - /clerk-auth — roles, middleware, Supabase sync, village_id on suppliers
 - /worldview-ui — dark HUD design system, colours, typography, components
 - /order-window-logic — flight-driven state machine, scarcity mechanics
@@ -107,3 +123,4 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - /seasonal-filter — month-range logic
 - /fiji-compliance — BICON, export certs, cold chain
 - /qa-playwright — Playwright browser testing against the live app
+- /pre-commit — checklist to run before every commit (types, lint, build, docs)
