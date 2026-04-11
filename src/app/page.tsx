@@ -1,8 +1,16 @@
-// Force fresh data on every request — no ISR caching (fish grid was showing empty due to stale cache)
+// Force fresh data on every request — no ISR caching
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { createPublicSupabaseClient } from "@/lib/supabase";
+import {
+  getActiveFlightWindow,
+  getWindowInventory,
+  calcCargoPercent,
+  formatFlightDate,
+  type InventoryRow,
+} from "@/lib/flight-windows";
+import { FLIGHT_CONFIG, CARGO_CONFIG } from "@/lib/config";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
@@ -18,7 +26,7 @@ import SocialProof from "@/components/SocialProof";
 import StickyOrderBar from "@/components/StickyOrderBar";
 import UrgencyBanner from "@/components/UrgencyBanner";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type FishRow = {
   id: string;
@@ -44,8 +52,7 @@ type SurveyRow = {
   vote_count: number;
 };
 
-// ── Test inventory ─────────────────────────────────────────────────────────
-// Hardcoded until inventory_availability is wired in Phase 1b.
+// ── Fallback inventory (used when no DB inventory available) ──────────────────
 
 const TEST_INVENTORY: Record<
   string,
@@ -60,13 +67,10 @@ const TEST_INVENTORY: Record<
   Sabutu:   { price_aud_cents: 4000, available_kg: 30, total_kg: 50  },
   Kawago:   { price_aud_cents: 3600, available_kg: 55, total_kg: 70  },
 };
-const DEFAULT_INVENTORY = {
-  price_aud_cents: 4000,
-  available_kg: 60,
-  total_kg: 100,
-};
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+const DEFAULT_INVENTORY = { price_aud_cents: 4000, available_kg: 60, total_kg: 100 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isInSeason(
   seasons: { month_start: number; month_end: number }[],
@@ -76,12 +80,26 @@ function isInSeason(
     if (s.month_start <= s.month_end) {
       return month >= s.month_start && month <= s.month_end;
     }
-    // wrap-around season (e.g. Nov–Feb: month_start=11, month_end=2)
     return month >= s.month_start || month <= s.month_end;
   });
 }
 
-function resolveInventory(nameFijian: string | null, nameEnglish: string) {
+function resolveInventory(
+  fishId: string,
+  nameFijian: string | null,
+  nameEnglish: string,
+  dbInventory: InventoryRow[],
+): { price_aud_cents: number; available_kg: number; total_kg: number } {
+  // Prefer DB inventory if available for this species
+  const dbRow = dbInventory.find((r) => r.fish_species_id === fishId);
+  if (dbRow) {
+    return {
+      price_aud_cents: dbRow.price_aud_cents,
+      available_kg: Number(dbRow.available_kg),
+      total_kg: Number(dbRow.total_capacity_kg),
+    };
+  }
+  // Fall back to hardcoded test data
   return (
     (nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
     TEST_INVENTORY[nameEnglish] ??
@@ -89,7 +107,6 @@ function resolveInventory(nameFijian: string | null, nameEnglish: string) {
   );
 }
 
-/** Walu first, then alphabetical by Fijian name */
 function sortFish(fish: FishCardData[]): FishCardData[] {
   return [...fish].sort((a, b) => {
     const aName = (a.name_fijian ?? a.name_english).toLowerCase();
@@ -100,9 +117,9 @@ function sortFish(fish: FishCardData[]): FishCardData[] {
   });
 }
 
-// ── Data fetchers ─────────────────────────────────────────────────────────
+// ── Data fetchers ─────────────────────────────────────────────────────────────
 
-async function getSeasonalFish(): Promise<FishCardData[]> {
+async function getSeasonalFish(dbInventory: InventoryRow[]): Promise<FishCardData[]> {
   try {
     const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
@@ -114,7 +131,7 @@ async function getSeasonalFish(): Promise<FishCardData[]> {
 
     if (error || !data) return [];
 
-    const currentMonth = new Date().getMonth() + 1; // 1–12
+    const currentMonth = new Date().getMonth() + 1;
 
     const seasonal = (data as FishRow[])
       .filter((fish) => isInSeason(fish.seasons ?? [], currentMonth))
@@ -124,7 +141,7 @@ async function getSeasonalFish(): Promise<FishCardData[]> {
         name_english: fish.name_english,
         name_scientific: fish.name_scientific,
         cooking_suggestions: fish.cooking_suggestions,
-        ...resolveInventory(fish.name_fijian, fish.name_english),
+        ...resolveInventory(fish.id, fish.name_fijian, fish.name_english, dbInventory),
       }));
 
     return sortFish(seasonal);
@@ -154,7 +171,6 @@ async function getSurveySpecies(): Promise<SurveyRow[]> {
     const { data, error } = await supabase
       .from("fish_interest_summary")
       .select("fish_species_id, name_fijian, name_english, vote_count");
-
     if (error || !data) return [];
     return data as SurveyRow[];
   } catch {
@@ -162,7 +178,7 @@ async function getSurveySpecies(): Promise<SurveyRow[]> {
   }
 }
 
-// ── Coming Soon Card ──────────────────────────────────────────────────────
+// ── Coming Soon Card ──────────────────────────────────────────────────────────
 
 function ComingSoonCard() {
   return (
@@ -189,18 +205,41 @@ function ComingSoonCard() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
+  // Fetch active flight window first — it drives capacity and countdown data
+  const activeWindow = await getActiveFlightWindow();
+  const dbInventory = activeWindow
+    ? await getWindowInventory(activeWindow.id)
+    : [];
+
+  // Fetch the rest in parallel
   const [fishList, village, surveySpecies] = await Promise.all([
-    getSeasonalFish(),
+    getSeasonalFish(dbInventory),
     getGaloaVillage(),
     getSurveySpecies(),
   ]);
 
+  // Resolve display values: prefer DB, fall back to config
+  const orderCloseAt = activeWindow
+    ? new Date(activeWindow.order_close_at).getTime()
+    : FLIGHT_CONFIG.orderCloseAt;
+
+  const cargoPercent =
+    calcCargoPercent(dbInventory) ?? CARGO_CONFIG.capacityPercent;
+
+  const nextDeliveryLabel = activeWindow
+    ? formatFlightDate(activeWindow.flight_date)
+    : FLIGHT_CONFIG.nextDeliveryLabel;
+
   return (
     <div className="flex flex-col min-h-screen">
-      <DeliveryBanner />
+      <DeliveryBanner
+        orderCloseAt={orderCloseAt}
+        cargoPercent={cargoPercent}
+        nextDeliveryLabel={nextDeliveryLabel}
+      />
 
       <main className="flex-1">
         {/* 1 — Hero */}
@@ -209,11 +248,8 @@ export default async function Home() {
         {/* 2 — Social proof bar */}
         <SocialProof />
 
-        {/* 3 — Seasonal fish grid (directly after hero for conversion) */}
-        <section
-          id="fish-grid"
-          className="px-4 py-12 sm:py-16 scroll-mt-20"
-        >
+        {/* 3 — Seasonal fish grid */}
+        <section id="fish-grid" className="px-4 py-12 sm:py-16 scroll-mt-20">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
@@ -231,14 +267,14 @@ export default async function Home() {
               </span>
             </div>
 
-            {/* Urgency banner — shows when cargo > 80% or window < 12h */}
-            <UrgencyBanner />
+            <UrgencyBanner
+              orderCloseAt={orderCloseAt}
+              cargoPercent={cargoPercent}
+            />
 
             {fishList.length === 0 ? (
               <div className="py-20 text-center border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm">
-                <span className="text-5xl block mb-4" aria-hidden="true">
-                  🌊
-                </span>
+                <span className="text-5xl block mb-4" aria-hidden="true">🌊</span>
                 <p className="text-text-primary font-semibold text-lg mb-2">
                   No fish available this season
                 </p>
@@ -253,7 +289,13 @@ export default async function Home() {
                     fish.name_fijian?.toLowerCase() === "walu" ||
                     fish.name_english.toLowerCase() === "walu";
                   return (
-                    <FishCard key={fish.id} fish={fish} isHero={isWalu && i === 0} index={i} />
+                    <FishCard
+                      key={fish.id}
+                      fish={fish}
+                      isHero={isWalu && i === 0}
+                      index={i}
+                      orderCloseAt={orderCloseAt}
+                    />
                   );
                 })}
                 <ComingSoonCard />
@@ -290,8 +332,7 @@ export default async function Home() {
 
       <Footer />
 
-      {/* Mobile sticky order bar — appears after scrolling past hero */}
-      <StickyOrderBar />
+      <StickyOrderBar cargoPercent={cargoPercent} />
     </div>
   );
 }

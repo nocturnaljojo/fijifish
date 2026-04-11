@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session 6)
+Last updated: 2026-04-11 (Session B)
 
 ---
 
@@ -10,7 +10,7 @@ Last updated: 2026-04-11 (Session 6)
 |-------|-------------|--------|
 | Phase 0 | Scaffold, Clerk auth, Supabase schema, seed | COMPLETE |
 | Phase 1a | Homepage (fish grid, map, surveys), QA infra | ~90% complete |
-| Phase 1b | Order flow, admin panel, RLS, Stripe checkout | NOT STARTED |
+| Phase 1b | Order flow, admin panel, RLS, Stripe checkout | IN PROGRESS |
 | Phase 2 | Supplier portal, driver portal, tracking | NOT STARTED |
 | Phase 3 | Broadcasts, impact stories, multi-village | NOT STARTED |
 
@@ -24,7 +24,14 @@ Last updated: 2026-04-11 (Session 6)
 | `/sign-in` | Clerk sign-in | LIVE |
 | `/sign-up` | Clerk sign-up | LIVE |
 | `/catch/[batchCode]` | QR traceability stub | LIVE (stub only) |
-| `/admin/*` | Admin panel | NOT BUILT |
+| `/admin` | Admin dashboard | LIVE |
+| `/admin/windows` | Flight window management | LIVE |
+| `/admin/pricing` | Inventory price + capacity | LIVE |
+| `/admin/photos` | Catch photo approval queue | LIVE |
+| `/admin/stories` | Impact stories CRUD | LIVE |
+| `/admin/customers` | User list | LIVE |
+| `/admin/broadcasts` | SMS/WhatsApp blasts | STUB (Phase 1b) |
+| `/admin/settings` | Zones + villages | LIVE (read-only) |
 | `/supplier/*` | Supplier portal | NOT BUILT |
 | `/driver/*` | Driver portal | NOT BUILT |
 | `/order` | Order/cart | NOT BUILT |
@@ -42,7 +49,10 @@ Last updated: 2026-04-11 (Session 6)
 | POST `/api/delivery-demand/vote` | LIVE | Delivery zone demand poll |
 | POST `/api/webhooks/clerk` | NOT BUILT | User sync to Supabase |
 | POST `/api/webhooks/stripe` | NOT BUILT | Payment confirmation |
-| GET `/api/admin/*` | NOT BUILT | Admin CRUD |
+| GET/POST/PATCH `/api/admin/windows` | LIVE | Flight window CRUD |
+| GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
+| GET/PATCH `/api/admin/photos` | LIVE | Photo approve/reject |
+| GET/POST/PATCH `/api/admin/stories` | LIVE | Impact stories CRUD |
 | GET `/api/supplier/*` | NOT BUILT | Supplier endpoints |
 
 ---
@@ -71,10 +81,14 @@ Last updated: 2026-04-11 (Session 6)
 | `StickyOrderBar.tsx` | Mobile-only bottom bar, appears after scroll |
 | `FeedbackForm.tsx` | Slide-up modal, 5-star rating |
 
-### Archived (.old.tsx — kept for reference, not rendered)
-- `GaloaMap.old.tsx`, `HeroSection.old.tsx`, `DeliveryBanner.old.tsx`
-- `FishCard.old.tsx`, `FishCard.old2.tsx`, `DeliveryBanner.old2.tsx`
-- `ReefToTable.tsx`, `ReefToTable.old.tsx`, `FlightSchedule.tsx`
+### Admin components
+| Component | Description |
+|-----------|-------------|
+| `admin/AdminSidebar.tsx` | Responsive sidebar, hamburger mobile, fixed 240px desktop |
+| `admin/windows/WindowForm.tsx` | Create window form + status transition buttons |
+| `admin/pricing/InventoryManager.tsx` | Inline-editable price/capacity table |
+| `admin/photos/PhotoQueue.tsx` | Photo cards with approve/reject |
+| `admin/stories/StoryManager.tsx` | Story CRUD with publish toggle |
 
 ---
 
@@ -85,12 +99,12 @@ Last updated: 2026-04-11 (Session 6)
 | `fish_species` | 001 | 8 species seeded, all is_active=true |
 | `seasons` | 001 | All month_start=1, month_end=12 (year-round) |
 | `villages` | 001 | Galoa, Bua seeded |
-| `flight_windows` | 001 | Hardcoded test data |
+| `flight_windows` | 001 | FJ911 seeded (2026-04-17, status=open) |
 | `delivery_zones` | 001 | Riverina zones |
 | `customers` | 001 | Clerk user sync target (webhook not yet built) |
 | `orders` | 001 | Not yet used |
 | `order_items` | 001 | Not yet used |
-| `inventory_availability` | 001 | Not yet used (TEST_INVENTORY hardcoded in page.tsx) |
+| `inventory_availability` | 001 | LIVE — 8 rows seeded for FJ911 window |
 | `fish_interest_votes` | 002 | Live |
 | `fish_interest_summary` | 002 | View — live |
 | `customer_feedback` | 002 | Live |
@@ -124,6 +138,7 @@ Last updated: 2026-04-11 (Session 6)
 | `src/lib/pricing.ts` | LIVE | AUD/FJD detection, isAustralian() |
 | `src/lib/config.ts` | LIVE | All configurable constants (FLIGHT_CONFIG, CARGO_CONFIG, THRESHOLDS, etc.) |
 | `src/lib/api-helpers.ts` | LIVE | withErrorHandling, requireAuth, requireAdmin, errorResponse |
+| `src/lib/flight-windows.ts` | LIVE | getActiveFlightWindow, getWindowInventory, calcCargoPercent, formatFlightDate |
 | `src/types/database.ts` | LIVE | TypeScript types for all Supabase tables |
 | `src/proxy.ts` | LIVE | Role-based middleware |
 | `src/lib/order-engine.ts` | NOT BUILT | Order window state machine |
@@ -158,9 +173,10 @@ Fix: Clerk Dashboard → Sessions → Customize session token → add `{ "metada
 
 ---
 
-## Hardcoded values to replace in Phase 1b
+## Hardcoded values status
 
-- `ORDER_CLOSE_TIMESTAMP` in `DeliveryBanner.tsx`, `UrgencyBanner.tsx` — replace with live `flight_windows` query
-- `CARGO_PCT` in `DeliveryBanner.tsx`, `UrgencyBanner.tsx`, `StickyOrderBar.tsx` — replace with live `inventory_availability` query
-- `TEST_INVENTORY` in `page.tsx` — replace with live `inventory_availability` query
-- "A$35/kg" in `StickyOrderBar.tsx`, `ProcessSteps.tsx` — replace with live price from DB
+All homepage components (`DeliveryBanner`, `UrgencyBanner`, `StickyOrderBar`, `FishCard`) now accept optional props from DB. `page.tsx` fetches live `flight_windows` + `inventory_availability` and passes through. Config values are fallbacks only.
+
+Remaining:
+- `TEST_INVENTORY` in `page.tsx` — still used when a species has no `inventory_availability` row for the current window
+- "A$35/kg" in `StickyOrderBar.tsx`, `ProcessSteps.tsx` — still static text (not species-specific)

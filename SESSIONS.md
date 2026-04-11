@@ -22,6 +22,63 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session B — 2026-04-11 — Admin panel + homepage wired to live DB
+
+### Changes
+
+**New admin pages (all dark theme, mobile-responsive, auth-gated):**
+- `src/app/admin/layout.tsx` — auth guard (redirect if not admin), AdminSidebar + main slot
+- `src/app/admin/page.tsx` — dashboard: 4 stat cards, active flight window card, 6 quick-action links
+- `src/app/admin/windows/page.tsx` + `WindowForm.tsx` — flight window CRUD, status transitions (upcoming→open→closing_soon→closed→shipped)
+- `src/app/admin/pricing/page.tsx` + `InventoryManager.tsx` — per-window inventory table, inline editable price/capacity cells
+- `src/app/admin/photos/page.tsx` + `PhotoQueue.tsx` — catch photo approval/reject queue
+- `src/app/admin/stories/page.tsx` + `StoryManager.tsx` — impact stories CRUD, publish/unpublish
+- `src/app/admin/customers/page.tsx` — users table with role badges
+- `src/app/admin/broadcasts/page.tsx` — Phase 1b placeholder
+- `src/app/admin/settings/page.tsx` — delivery zones + villages read-only tables
+- `src/components/admin/AdminSidebar.tsx` — responsive sidebar (hamburger on mobile, fixed 240px on desktop)
+
+**New API routes (all use `withErrorHandling` + `requireAdmin`):**
+- `src/app/api/admin/windows/route.ts` — GET list, POST create, PATCH update
+- `src/app/api/admin/pricing/route.ts` — GET by window, POST add species, PATCH edit price/capacity
+- `src/app/api/admin/photos/route.ts` — GET pending, PATCH approve/reject (+ update species default image)
+- `src/app/api/admin/stories/route.ts` — GET list, POST create, PATCH update/publish
+
+**New lib files:**
+- `src/lib/flight-windows.ts` — `getActiveFlightWindow()`, `getWindowInventory()`, `calcCargoPercent()`, `formatFlightDate()`
+
+**Homepage wired to live DB:**
+- `src/app/page.tsx` — fetches `flight_windows` + `inventory_availability`; passes `orderCloseAt`, `cargoPercent`, `nextDeliveryLabel` to all components; falls back to config values if no live data
+- `src/components/DeliveryBanner.tsx`, `UrgencyBanner.tsx`, `StickyOrderBar.tsx`, `FishCard.tsx` — all accept optional DB-sourced props (backward-compatible)
+
+**Supabase seed (via MCP):**
+- Flight window: FJ911, 2026-04-17, order closes 2026-04-15T13:59Z, status=open
+- 8 inventory rows: Walu 72av/100t, Kawakawa 15av/80t, Donu 8av/40t, Saqa 0av/60t (sold out), Urau 25av/30t, Kacika 40av/60t, Sabutu 30av/50t, Kawago 55av/70t
+
+**CSS:**
+- `src/app/globals.css` — added `.admin-input` dark-themed form input class
+
+**Pre-commit fixes:**
+- `src/app/admin/photos/page.tsx` + `src/app/admin/stories/page.tsx` — `unknown` intermediate cast for Supabase join type mismatch
+- `src/app/admin/photos/PhotoQueue.tsx` — escaped quotes with `&ldquo;`/`&rdquo;`
+- `src/app/admin/pricing/InventoryManager.tsx` — escaped quotes in JSX text
+- tsc: 0 source errors; lint: 0 errors; build: ✓ 18 routes
+
+### Status after this session
+- Admin panel: fully navigable at `/admin/*`
+- Homepage: reads live flight window + inventory from DB
+- Supabase: seeded with test data for FJ911 window (8 species inventory)
+
+### Next up (Phase 1b)
+- [ ] Set Clerk session token (see Known Issue #3) — admin panel blocked until this is done
+- [ ] Set Vercel env vars (see Known Issue #4)
+- [ ] Cart + Stripe checkout (AU buyers only)
+- [ ] Realtime capacity subscriptions (`src/lib/scarcity.ts`)
+- [ ] Clerk webhook (`/api/webhooks/clerk`) — sync new users to `users` table
+- [ ] Supplier portal (`/supplier/*`)
+
+---
+
 ## Session 6 — 2026-04-11 — Code health: shared config, types, API helpers, cleanup
 
 ### Changes

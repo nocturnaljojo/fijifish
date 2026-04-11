@@ -45,3 +45,25 @@ body {
     linear-gradient(90deg, rgba(79, 195, 247, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+/* ── Admin panel form inputs ── */
+.admin-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: #111a2e;
+  border: 1px solid #1e2a3a;
+  border-radius: 0.5rem;
+  color: #e0e6ed;
+  font-size: 0.875rem;
+  font-family: var(--font-plex-mono, monospace);
+  transition: border-color 0.15s ease;
+  outline: none;
+}
+.admin-input:focus {
+  border-color: #4fc3f7;
+  box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2);
+}
+.admin-input option {
+  background-color: #111a2e;
+  color: #e0e6ed;
+}

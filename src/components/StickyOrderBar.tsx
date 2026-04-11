@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
 
-const CARGO_PCT = CARGO_CONFIG.capacityPercent;
+interface StickyOrderBarProps {
+  cargoPercent?: number;
+}
 
-export default function StickyOrderBar() {
+export default function StickyOrderBar({ cargoPercent }: StickyOrderBarProps = {}) {
+  const CARGO_PCT = cargoPercent ?? CARGO_CONFIG.capacityPercent;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

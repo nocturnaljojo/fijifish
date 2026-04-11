@@ -5,8 +5,6 @@ import CapacityBar from "./CapacityBar";
 import CountdownTimer from "./CountdownTimer";
 import { FLIGHT_CONFIG, THRESHOLDS } from "@/lib/config";
 
-const ORDER_CLOSE_TIMESTAMP = FLIGHT_CONFIG.orderCloseAt;
-
 export interface FishCardData {
   id: string;
   name_fijian: string | null;
@@ -26,7 +24,7 @@ function formatPrice(cents: number): string {
 
 // ── Hero Card (Walu) ─────────────────────────────────────────────────────────
 
-function HeroFishCard({ fish }: { fish: FishCardData }) {
+function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt: number }) {
   const isSoldOut = fish.available_kg <= 0;
 
   return (
@@ -98,7 +96,7 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
             <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse shrink-0" aria-hidden="true" />
             <span>Order closes in</span>
             <CountdownTimer
-              targetTimestamp={ORDER_CLOSE_TIMESTAMP}
+              targetTimestamp={orderCloseAt}
               className="font-bold text-xs"
               baseColor="text-reef-coral"
               urgentColor="text-reef-coral"
@@ -140,11 +138,15 @@ export default function FishCard({
   fish,
   isHero = false,
   index = 0,
+  orderCloseAt,
 }: {
   fish: FishCardData;
   isHero?: boolean;
   index?: number;
+  orderCloseAt?: number;
 }) {
+  const closeAt = orderCloseAt ?? FLIGHT_CONFIG.orderCloseAt;
+
   if (isHero) {
     return (
       <motion.div
@@ -154,7 +156,7 @@ export default function FishCard({
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="md:col-span-2 lg:col-span-2"
       >
-        <HeroFishCard fish={fish} />
+        <HeroFishCard fish={fish} orderCloseAt={closeAt} />
       </motion.div>
     );
   }
@@ -224,7 +226,7 @@ export default function FishCard({
         <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary">
           <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse shrink-0" aria-hidden="true" />
           <CountdownTimer
-            targetTimestamp={ORDER_CLOSE_TIMESTAMP}
+            targetTimestamp={closeAt}
             className="font-bold text-[10px]"
             baseColor="text-reef-coral"
             urgentColor="text-reef-coral"

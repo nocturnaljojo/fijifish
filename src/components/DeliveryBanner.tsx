@@ -1,8 +1,14 @@
 import CountdownTimer from "./CountdownTimer";
 import { FLIGHT_CONFIG, CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
 
-const ORDER_CLOSE_TIMESTAMP = FLIGHT_CONFIG.orderCloseAt;
-const CARGO_PCT = CARGO_CONFIG.capacityPercent;
+interface DeliveryBannerProps {
+  /** UTC ms timestamp — overrides config when real DB data is available */
+  orderCloseAt?: number;
+  /** 0–100 fill percent — overrides config when real DB data is available */
+  cargoPercent?: number;
+  /** e.g. "Thursday 17 Apr" — overrides config when real DB data is available */
+  nextDeliveryLabel?: string;
+}
 
 function cargoLabel(pct: number): string {
   if (pct >= THRESHOLDS.cargoLastSpots) return `${pct}% Full — Last spots!`;
@@ -11,7 +17,15 @@ function cargoLabel(pct: number): string {
   return `${pct}% Full — Secure your spot`;
 }
 
-export default function DeliveryBanner() {
+export default function DeliveryBanner({
+  orderCloseAt,
+  cargoPercent,
+  nextDeliveryLabel,
+}: DeliveryBannerProps = {}) {
+  const ORDER_CLOSE_TIMESTAMP = orderCloseAt ?? FLIGHT_CONFIG.orderCloseAt;
+  const CARGO_PCT = cargoPercent ?? CARGO_CONFIG.capacityPercent;
+  const deliveryLabel = nextDeliveryLabel ?? FLIGHT_CONFIG.nextDeliveryLabel;
+
   const barColor =
     CARGO_PCT >= 90
       ? "#ff7043"
@@ -32,7 +46,7 @@ export default function DeliveryBanner() {
                 Next Delivery
               </p>
               <p className="text-sm font-bold text-text-primary leading-none">
-                {FLIGHT_CONFIG.nextDeliveryLabel}
+                {deliveryLabel}
               </p>
             </div>
           </div>
