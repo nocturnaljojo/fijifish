@@ -173,6 +173,17 @@ Fix: Clerk Dashboard → Sessions → Customize session token → add `{ "metada
 
 ---
 
+## Future Roadmap (not yet planned, noted for later)
+
+- [ ] Afterpay integration — buy now pay later for AU customers
+- [ ] Zip Pay integration — alternative BNPL option
+- [ ] Fiji Airways partnership — negotiate volume cargo discounts, co-branding, promotional flights
+- [ ] Fiji Airways loyalty tie-in — "FijiFish Flyer" points or bundled deals
+- [ ] Multi-payment gateway — Stripe + Afterpay + Zip Pay checkout options
+- [ ] Pacific community payment methods — M-PAiSA (Vodafone Fiji), MyCash for FJD payments
+
+---
+
 ## Hardcoded values status
 
 All homepage components (`DeliveryBanner`, `UrgencyBanner`, `StickyOrderBar`, `FishCard`) now accept optional props from DB. `page.tsx` fetches live `flight_windows` + `inventory_availability` and passes through. Config values are fallbacks only.

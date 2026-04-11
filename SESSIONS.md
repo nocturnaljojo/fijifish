@@ -22,6 +22,17 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Future Roadmap (not yet planned, noted for later)
+
+- [ ] Afterpay integration — buy now pay later for AU customers
+- [ ] Zip Pay integration — alternative BNPL option
+- [ ] Fiji Airways partnership — negotiate volume cargo discounts, co-branding, promotional flights
+- [ ] Fiji Airways loyalty tie-in — "FijiFish Flyer" points or bundled deals
+- [ ] Multi-payment gateway — Stripe + Afterpay + Zip Pay checkout options
+- [ ] Pacific community payment methods — M-PAiSA (Vodafone Fiji), MyCash for FJD payments
+
+---
+
 ## Session B — 2026-04-11 — Admin panel + homepage wired to live DB
 
 ### Changes
