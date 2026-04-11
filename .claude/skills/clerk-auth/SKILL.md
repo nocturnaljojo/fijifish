@@ -18,12 +18,20 @@ allowed-tools: Read, Write, Grep, Glob, Bash
 - driver: { role: "driver" }
 - admin: { role: "admin" }
 
-## Middleware (src/middleware.ts):
+## Middleware (src/proxy.ts — exported as middleware):
 - / , /fish, /villages, /about → public
 - /order, /account → authenticated (Stripe checkout only if AU)
 - /supplier/* → supplier + admin only
 - /driver/* → driver + admin only
 - /admin/* → admin only
+- Role read from: `sessionClaims?.metadata as { role?: string }`
+- Session token MUST be customised in Clerk Dashboard → Sessions → Customize session token:
+  `{ "metadata": "{{user.public_metadata}}" }`
+  Without this, all users are treated as buyers.
+
+## Clerk component gotcha:
+- `SignedIn` / `SignedOut` are NOT exported from `@clerk/nextjs` in this version.
+- Use `useAuth()` for `isSignedIn` and conditional rendering instead.
 
 ## Clerk → Supabase sync:
 - Webhook on user.created → insert users table with clerk_id, role, village_id
@@ -34,6 +42,11 @@ allowed-tools: Read, Write, Grep, Glob, Bash
 - Stripe checkout only renders if user country_code === "AU"
 - Non-AU users: view catalogue, see prices, but no checkout button
 - Show "Available in Australia only" with WhatsApp link
+
+## Supabase client note:
+NEVER use createServerSupabaseClient() in public page components — it requires
+SUPABASE_SERVICE_ROLE_KEY and will throw silently if not set, causing empty page data.
+Use createPublicSupabaseClient() for public reads. See CLAUDE.md for the three-client pattern.
 
 ## Gotchas:
 - Clerk free tier: 10,000 MAU. Sufficient for Phase 1-2.

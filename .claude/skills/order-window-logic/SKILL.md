@@ -12,8 +12,9 @@ The platform calculates order closing times by working backwards from flight dep
 
 ## Flight schedule (Fiji Airways, current)
 - Days: Monday, Wednesday, Saturday
-- Labasa → Nadi: departs ~8:45am FJT
-- Nadi → Canberra: departs ~9:00am FJT (connects same day or next)
+- Labasa → Nadi: cargo transfer to Nadi hub
+- Nadi → Sydney: FJ911, arrives Sydney (not Canberra)
+- Sydney → Riverina region: freezer truck delivery
 - FJT = AEST - 2 hours
 
 ## Timeline working backwards
@@ -33,7 +34,7 @@ UPCOMING → OPEN → CLOSING_SOON → CLOSED → PACKING → SHIPPED → IN_TRA
 - CLOSED: no new orders, cousin receives order summary via WhatsApp/Telegram
 - PACKING: cousin confirms availability, adjusts quantities if needed
 - SHIPPED: fish on plane, customers notified with ETA
-- IN_TRANSIT: picked up at Canberra airport, in freezer truck to Wagga
+- IN_TRANSIT: picked up at Sydney airport, in freezer truck to Riverina
 - DELIVERED: customer receives fish, feedback prompt triggered
 
 ## Gotchas

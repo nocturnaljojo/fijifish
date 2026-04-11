@@ -25,7 +25,7 @@ Read this before building any feature. If spec and code disagree, spec wins.
 7. NEVER start coding without completing steps 1–2
 
 ## At session start
-1. Read CLAUDE.md, SESSIONS.md, FIJIFISH-WEBAPP-SPEC-v3.md
+1. Read CLAUDE.md, SESSIONS.md, FIJIFISH-WEBAPP-SPEC-v3.md, STATUS.md
 2. State: current phase, last built, known issues, next task
 3. Load relevant skills before writing code
 
@@ -60,15 +60,14 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 
 ## Reference files
 - FIJIFISH-WEBAPP-SPEC-v3.md — COMPLETE product spec
+- STATUS.md — live components, routes, tables, what's built vs not
 - src/lib/supabase.ts — three Supabase clients (public/browser/server)
-- src/lib/roles.ts — server-side role helpers
+- src/lib/roles.ts — server-side role helpers (getUserRole, requireRole, getVillageId)
 - src/lib/roles-client.ts — client-side useRole() hook
 - src/lib/pricing.ts — AUD/FJD dual currency logic
-- src/lib/order-engine.ts — order window state machine
-- src/lib/route-optimiser.ts — nearest-neighbour delivery routing
-- src/lib/notifications.ts — central notification dispatcher
-- src/lib/scarcity.ts — capacity tracking + realtime subscriptions
-- supabase/migrations/ — schema source of truth
+- src/proxy.ts — role-based middleware (admin/supplier/driver route protection)
+- supabase/migrations/ — schema source of truth (001–005, 007–008; 006 skipped)
+- NOT YET BUILT: src/lib/order-engine.ts, src/lib/route-optimiser.ts, src/lib/notifications.ts, src/lib/scarcity.ts
 
 ## Code standards
 - TypeScript strict, no any
@@ -94,7 +93,7 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - NEVER skip Spam Act 2003 compliance on broadcasts
 - NEVER use createServerSupabaseClient() in public page components
 
-## Skills (12)
+## Skills (13)
 - /clerk-auth — roles, middleware, Supabase sync, village_id on suppliers
 - /worldview-ui — dark HUD design system, colours, typography, components
 - /order-window-logic — flight-driven state machine, scarcity mechanics
@@ -107,3 +106,4 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - /stripe-checkout — payment, webhooks, refunds
 - /seasonal-filter — month-range logic
 - /fiji-compliance — BICON, export certs, cold chain
+- /qa-playwright — Playwright browser testing against the live app

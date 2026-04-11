@@ -22,6 +22,27 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session 5 — 2026-04-11 — Documentation audit
+
+### Changes
+- `CLAUDE.md` — fixed reference files list (removed 4 non-existent lib files, added STATUS.md + proxy.ts); skills count 12→13 (added qa-playwright); updated At session start to include STATUS.md
+- `STATUS.md` — created: full build status, all routes, components, tables, buckets, lib files, infrastructure, known issues, hardcoded values to replace
+- `.claude/skills/clerk-auth/SKILL.md` — updated middleware path (proxy.ts not middleware.ts); added SignedIn/SignedOut gotcha; added Supabase client pattern note
+- `.claude/skills/order-window-logic/SKILL.md` — fixed flight route (Labasa→Nadi→Sydney, not Canberra); fixed IN_TRANSIT state description
+- `.claude/skills/photo-approval/SKILL.md` — updated Storage section with all 4 buckets from migration 005; added catch_batches + village_media table references
+- `.claude/skills/qa-playwright/SKILL.md` — expanded test checklist to include Navbar, SocialProof, UrgencyBanner, StickyOrderBar, DeliveryZoneBanner, DeliveryDemandPoll, /catch route
+
+### Next up (Phase 1b)
+- [ ] Set Clerk session token (see Known Issue #3)
+- [ ] Set Vercel env vars (see Known Issue #4)
+- [ ] Wire `inventory_availability` table for real prices/capacity per flight window
+- [ ] Admin panel: capacity + price management, flight window CRUD
+- [ ] Supabase RLS policies (Clerk JWT)
+- [ ] Cart + Stripe checkout (AU buyers only)
+- [ ] Realtime capacity subscriptions
+
+---
+
 ## Session 4 — 2026-04-11 — FOMO messaging upgrade
 
 ### Changes

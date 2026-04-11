@@ -18,20 +18,29 @@ TEST CHECKLIST (run every QA session):
 - Dark WorldView theme applied (#0a0f1a background, not white, not default)
 - IBM Plex Mono font used for all numbers, prices, countdown
 - Plus Jakarta Sans font used for body text
-- Delivery banner visible at top with countdown timer
+- Navbar renders (fixed top, sign-in/sign-up links when logged out)
+- Delivery banner visible at top with countdown timer and escalating cargo label
 - Countdown timer ticks (check twice with 2 second gap)
+- SocialProof bar renders with count-up stats (47 people, 8 zones, 3500km)
 - Fish cards render from Supabase data (not empty state unless DB is empty)
-- Each fish card shows: Fijian name, English name, price in sunset gold, capacity bar, village origin
+- Each fish card shows: Fijian name, English name, price in sunset gold, capacity bar
+- Walu is sorted first with "Most Popular" badge and hero styling
+- UrgencyBanner: renders when cargo ≥ 80% or window < 12h; hidden otherwise
 - Capacity bar: teal fill, amber when <20%, sold out shows red/badge
+- ProcessSteps: 3-column grid on desktop, whileInView stagger animation
+- DeliveryZoneBanner renders below ProcessSteps
+- StickyOrderBar: hidden on desktop (md:hidden), appears after scroll on mobile
 - Responsive: test at 375px (mobile), 768px (tablet), 1280px (desktop)
 - No console errors in browser
 - Clerk sign-in page loads at /sign-in
 - Clerk sign-up page loads at /sign-up
 - Footer renders with route chain and links
 - Village preview section renders
-- Galoa map animation renders (see Step 7)
+- Galoa map animation renders (intersection observer trigger)
 - Fish interest survey is accessible from homepage
+- Delivery demand poll renders beside fish survey
 - Feedback form is accessible
+- /catch/[batchCode] route loads (stub page, not 404)
 
 SEVERITY LEVELS:
 - CRITICAL: Page doesn't load, white screen, console errors blocking render, wrong theme

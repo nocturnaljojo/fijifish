@@ -10,9 +10,15 @@ allowed-tools: Read, Write, Grep
 1. Catch photos: supplier → admin approval → buyers see "Fish Caught" with real photo
 2. Delivery proofs: driver → auto-saved → communal/proxy flagged for admin
 
-## Storage: Supabase Storage
-- Bucket catch-photos: {flight_window_id}/{species_id}/{timestamp}.jpg
-- Bucket delivery-proofs: {delivery_run_id}/{stop_id}/{timestamp}.jpg
+## Storage: Supabase Storage (migration 005)
+Four buckets created:
+- catch-photos (public, 1MB max): {flight_window_id}/{species_id}/{timestamp}.jpg
+- delivery-proofs (private, 5MB max): {delivery_run_id}/{stop_id}/{timestamp}.jpg
+- village-media (public, 50MB max): general village photos, impact stories
+- qr-labels (public, 512KB max): QR codes for catch batch traceability
+
+DB: catch_batches table (migration 007) links batches to flight_windows and fish_species.
+DB: village_media table (migration 008) tracks approval workflow for village photos.
 
 ## CRITICAL RULES
 1. NEVER store photos as base64 in database. Upload to Storage, store URL.
