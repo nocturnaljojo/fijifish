@@ -10,11 +10,8 @@ export default function Navbar() {
   const isLoaded = authLoaded && roleLoaded;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[60] pointer-events-none">
-      {/* Sits above the sticky DeliveryBanner (z-50).
-          pointer-events-none on the full bar so it doesn't block clicks,
-          pointer-events-auto only on the user button area. */}
-      <div className="max-w-6xl mx-auto px-4 flex items-center justify-end h-12 pointer-events-auto">
+    <nav className="w-full bg-bg-primary border-b border-white/5 z-50">
+      <div className="max-w-6xl mx-auto px-4 flex items-center justify-end h-10">
         {!isLoaded ? null : !isSignedIn ? (
           /* Signed out — show sign-in / sign-up links */
           <div className="flex items-center gap-2">
@@ -54,8 +51,12 @@ export default function Navbar() {
             <UserButton
               appearance={{
                 elements: {
-                  avatarBox:
-                    "w-8 h-8 ring-1 ring-white/10 hover:ring-ocean-teal/50 transition-all",
+                  avatarBox: "w-7 h-7 ring-1 ring-white/10 hover:ring-ocean-teal/50 transition-all",
+                  userButtonPopoverCard: "bg-[#0d1520] border border-white/10 shadow-2xl",
+                  userButtonPopoverActionButton: "text-[#e0e6ed] hover:bg-white/5",
+                  userButtonPopoverActionButtonText: "text-[#e0e6ed]",
+                  userButtonPopoverActionButtonIcon: "text-[#90a4ae]",
+                  userButtonPopoverFooter: "hidden",
                 },
               }}
             >

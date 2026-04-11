@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const plexMono = IBM_Plex_Mono({
@@ -42,6 +41,7 @@ export default function RootLayout({
           borderRadius: "0.5rem",
         },
         elements: {
+          // Cards + forms (sign-in, sign-up, manage account)
           card: { backgroundColor: "#0d1520", border: "1px solid #1e2a3a", boxShadow: "none" },
           formFieldInput: { backgroundColor: "#111a2e", borderColor: "#2a3a4a", color: "#e0e6ed" },
           formFieldLabel: { color: "#90a4ae" },
@@ -52,6 +52,18 @@ export default function RootLayout({
           socialButtonsBlockButton: { backgroundColor: "#111a2e", border: "1px solid #1e2a3a", color: "#e0e6ed" },
           dividerLine: { backgroundColor: "#1e2a3a" },
           dividerText: { color: "#546e7a" },
+          identityPreviewText: { color: "#e0e6ed" },
+          identityPreviewEditButton: { color: "#4fc3f7" },
+          // UserButton dropdown popover
+          userButtonPopoverCard: { backgroundColor: "#0d1520", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" },
+          userButtonPopoverActionButton: { color: "#e0e6ed" },
+          userButtonPopoverActionButtonText: { color: "#e0e6ed" },
+          userButtonPopoverActionButtonIcon: { color: "#90a4ae" },
+          userButtonPopoverFooter: { display: "none" },
+          // Generic menu (used in UserButton popover)
+          menuList: { backgroundColor: "#0d1520", border: "1px solid rgba(255,255,255,0.1)" },
+          menuItem: { color: "#e0e6ed" },
+          menuButton: { color: "#e0e6ed" },
         },
       }}
     >
@@ -60,7 +72,6 @@ export default function RootLayout({
         className={`${plexMono.variable} ${jakarta.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col bg-bg-primary text-text-primary font-sans">
-          <Navbar />
           {children}
         </body>
       </html>

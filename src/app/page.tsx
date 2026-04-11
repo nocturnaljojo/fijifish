@@ -11,6 +11,7 @@ import {
   type InventoryRow,
 } from "@/lib/flight-windows";
 import { FLIGHT_CONFIG, CARGO_CONFIG } from "@/lib/config";
+import Navbar from "@/components/Navbar";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
@@ -240,6 +241,7 @@ export default async function Home() {
         cargoPercent={cargoPercent}
         nextDeliveryLabel={nextDeliveryLabel}
       />
+      <Navbar />
 
       <main className="flex-1">
         {/* 1 — Hero */}
