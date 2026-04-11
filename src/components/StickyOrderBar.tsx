@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+// Matches CARGO_PCT in DeliveryBanner
+const CARGO_PCT = 72;
+
 export default function StickyOrderBar() {
   const [visible, setVisible] = useState(false);
 
@@ -12,6 +15,9 @@ export default function StickyOrderBar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const ctaLabel =
+    CARGO_PCT >= 80 ? "Order Now — Almost Full!" : "Order Before Window Closes";
 
   return (
     <div
@@ -34,9 +40,9 @@ export default function StickyOrderBar() {
         </div>
         <a
           href="#fish-grid"
-          className="shrink-0 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-ocean-teal text-bg-primary font-bold text-sm min-h-[48px] hover:opacity-90 active:scale-[0.98] transition-all"
+          className="shrink-0 inline-flex items-center justify-center px-4 py-3 rounded-xl bg-ocean-teal text-bg-primary font-bold text-sm min-h-[48px] hover:opacity-90 active:scale-[0.98] transition-all"
         >
-          Order Now
+          {ctaLabel}
         </a>
       </div>
     </div>

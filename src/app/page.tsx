@@ -16,6 +16,7 @@ import VillagePreview from "@/components/VillagePreview";
 import Footer from "@/components/Footer";
 import SocialProof from "@/components/SocialProof";
 import StickyOrderBar from "@/components/StickyOrderBar";
+import UrgencyBanner from "@/components/UrgencyBanner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -229,6 +230,9 @@ export default async function Home() {
                 NEXT FLIGHT
               </span>
             </div>
+
+            {/* Urgency banner — shows when cargo > 80% or window < 12h */}
+            <UrgencyBanner />
 
             {fishList.length === 0 ? (
               <div className="py-20 text-center border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm">

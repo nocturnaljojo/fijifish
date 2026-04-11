@@ -22,6 +22,29 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session 4 — 2026-04-11 — FOMO messaging upgrade
+
+### Changes
+- `HeroSection.tsx` — urgency line below CTAs: "⚠️ Don't miss out — order before the catch window closes or cargo space fills up" (reef-coral, font-mono, animate-pulse)
+- `DeliveryBanner.tsx` — cargo label now escalates: "Secure your spot" → "Filling fast" → "Almost gone!" → "Last spots!" based on CARGO_PCT thresholds (50/80/95%)
+- `FishCard.tsx` — Walu hero: CTA changed to "Secure Your Order — A$35/kg" + subtext "🛩️ Limited cargo space · ⏰ Catch window closing soon"; regular cards: "Order Now" + "Limited cargo space remaining" shown when < 50% capacity left
+- `StickyOrderBar.tsx` — CTA dynamically switches: "Order Before Window Closes" normally, "Order Now — Almost Full!" when CARGO_PCT ≥ 80
+- `ProcessSteps.tsx` — Step 01 body updated to explain both urgency drivers (cargo space + catch window)
+- `UrgencyBanner.tsx` — new client component; shows reef-coral alert when countdown < 12h, amber alert when cargo ≥ 80%; renders nothing otherwise
+- `page.tsx` — UrgencyBanner inserted above fish grid (below heading)
+
+### Next up (Phase 1b)
+- [ ] Set Clerk session token (see Known Issue #3)
+- [ ] Set Vercel env vars (see Known Issue #4)
+- [ ] Wire `inventory_availability` table for real prices/capacity per flight window
+- [ ] Admin panel: capacity + price management, flight window CRUD
+- [ ] Supabase RLS policies (Clerk JWT)
+- [ ] Cart + Stripe checkout (AU buyers only)
+- [ ] Realtime capacity subscriptions
+- [ ] Session B: supplier portal UI, admin panel UI
+
+---
+
 ## Session 3 — 2026-04-11 — Fish grid fix + Navbar + Session A infra
 
 ### Root cause of empty fish grid

@@ -110,7 +110,7 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
               "Firm, white flesh perfect for kokoda, curry, or pan-frying. Caught to order — never frozen."}
           </p>
 
-          <div className="mt-auto">
+          <div className="mt-auto space-y-2">
             <button
               type="button"
               disabled={isSoldOut}
@@ -120,8 +120,13 @@ function HeroFishCard({ fish }: { fish: FishCardData }) {
                   : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
               }`}
             >
-              {isSoldOut ? "Sold Out" : "Order Walu — A$35/kg"}
+              {isSoldOut ? "Sold Out" : "Secure Your Order — A$35/kg"}
             </button>
+            {!isSoldOut && (
+              <p className="text-xs text-text-secondary text-center font-mono">
+                🛩️ Limited cargo space · ⏰ Catch window closing soon
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -245,12 +250,19 @@ export default function FishCard({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98] transition-all"
-            >
-              Add to Order
-            </button>
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98] transition-all"
+              >
+                Order Now
+              </button>
+              {fish.available_kg < fish.total_kg * 0.5 && (
+                <p className="text-xs text-text-secondary text-center font-mono">
+                  Limited cargo space remaining
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>

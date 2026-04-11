@@ -6,6 +6,13 @@ const ORDER_CLOSE_TIMESTAMP = new Date("2026-04-15T13:59:00.000Z").getTime();
 // Total cargo capacity — hardcoded until inventory_availability wired in Phase 1b
 const CARGO_PCT = 72;
 
+function cargoLabel(pct: number): string {
+  if (pct >= 95) return `${pct}% Full — Last spots!`;
+  if (pct >= 80) return `${pct}% Full — Almost gone!`;
+  if (pct >= 50) return `${pct}% Full — Filling fast`;
+  return `${pct}% Full — Secure your spot`;
+}
+
 export default function DeliveryBanner() {
   const barColor =
     CARGO_PCT >= 90
@@ -32,10 +39,10 @@ export default function DeliveryBanner() {
             </div>
           </div>
 
-          {/* Centre — cargo bar */}
+          {/* Centre — cargo bar with escalating label */}
           <div className="hidden sm:flex items-center gap-3 sm:py-3 sm:px-6 flex-1">
             <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-text-secondary whitespace-nowrap">
-              Flight Capacity
+              Flight Cargo
             </span>
             <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: "rgba(30,42,58,0.8)" }}>
               <div
@@ -44,7 +51,7 @@ export default function DeliveryBanner() {
               />
             </div>
             <span className="text-xs font-mono font-bold whitespace-nowrap" style={{ color: barColor }}>
-              {CARGO_PCT}% Full
+              {cargoLabel(CARGO_PCT)}
             </span>
           </div>
 
@@ -69,7 +76,7 @@ export default function DeliveryBanner() {
 
         </div>
 
-        {/* Mobile: cargo bar */}
+        {/* Mobile: cargo bar with label */}
         <div className="sm:hidden pb-2.5 flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
           <span className="text-text-secondary shrink-0">Cargo</span>
           <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(30,42,58,0.8)" }}>
@@ -79,7 +86,7 @@ export default function DeliveryBanner() {
             />
           </div>
           <span className="font-bold shrink-0" style={{ color: barColor }}>
-            {CARGO_PCT}%
+            {cargoLabel(CARGO_PCT)}
           </span>
         </div>
       </div>

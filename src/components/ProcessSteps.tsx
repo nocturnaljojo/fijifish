@@ -21,7 +21,7 @@ const STEPS: StepData[] = [
     icon: ShoppingCart,
     accentColor: "#4fc3f7",
     title: "You Pre-Order",
-    body: "Order by Monday night. Pick your fish, choose your quantity. Payment secures your spot on the flight.",
+    body: "Order by Monday night. Pick your fish, choose your quantity. Payment secures your spot on the flight — once cargo space is full or the catch window closes, you'll have to wait for the next delivery.",
     detail: "🔴 Window closes Monday 11:59 PM AEST",
   },
   {

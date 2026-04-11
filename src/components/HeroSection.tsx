@@ -112,6 +112,16 @@ export default function HeroSection() {
           </a>
         </motion.div>
 
+        {/* Urgency line */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.55 }}
+          className="mt-4 text-sm font-mono text-reef-coral/80 text-center animate-pulse"
+        >
+          ⚠️ Don&apos;t miss out — order before the catch window closes or cargo space fills up
+        </motion.p>
+
         {/* Trust badges */}
         <motion.div
           initial={{ opacity: 0 }}
