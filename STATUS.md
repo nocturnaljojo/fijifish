@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session C)
+Last updated: 2026-04-11 (Session D)
 
 ---
 
@@ -34,7 +34,10 @@ Last updated: 2026-04-11 (Session C)
 | `/admin/settings` | Zones + villages | LIVE (read-only) |
 | `/supplier/*` | Supplier portal | NOT BUILT |
 | `/driver/*` | Driver portal | NOT BUILT |
-| `/order` | Order/cart | NOT BUILT |
+| `/checkout` | Checkout (auth-gated delivery form) | LIVE |
+| `/order/success` | Post-payment confirmation + 4-step timeline | LIVE |
+| `/supply-chain` | Supply chain story (stub) | LIVE |
+| `/impact` | Village impact stories (stub) | LIVE |
 | `/account` | Buyer account | NOT BUILT |
 | `/track/[orderId]` | Shipment tracking | NOT BUILT |
 
@@ -47,8 +50,9 @@ Last updated: 2026-04-11 (Session C)
 | POST `/api/survey/vote` | LIVE | Fish interest vote |
 | POST `/api/feedback` | LIVE | 5-star feedback form |
 | POST `/api/delivery-demand/vote` | LIVE | Delivery zone demand poll |
+| POST `/api/checkout` | LIVE | Cart → Stripe checkout session |
 | POST `/api/webhooks/clerk` | NOT BUILT | User sync to Supabase |
-| POST `/api/webhooks/stripe` | NOT BUILT | Payment confirmation |
+| POST `/api/webhooks/stripe` | LIVE | checkout.session.completed → order confirmed |
 | GET/POST/PATCH `/api/admin/windows` | LIVE | Flight window CRUD |
 | GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
 | GET/PATCH `/api/admin/photos` | LIVE | Photo approve/reject |
@@ -92,6 +96,8 @@ Last updated: 2026-04-11 (Session C)
 | `UnlockBoard.tsx` | Leaderboard of locked fish with vote progress bars + auth gate |
 | `AuthPromptModal.tsx` | Slide-up auth prompt for unauthenticated voters (framer-motion) |
 | `UnlockCelebration.tsx` | localStorage-based unlock toast + `recordVoteInStorage` helper |
+| `CartDrawer.tsx` | Slide-in cart drawer from right; qty +/-; framer-motion AnimatePresence |
+| `CartPortal.tsx` | Client wrapper for CartDrawer; renders in root layout |
 
 ---
 
@@ -145,6 +151,8 @@ Last updated: 2026-04-11 (Session C)
 | `src/lib/flight-windows.ts` | LIVE | getActiveFlightWindow, getWindowInventory, calcCargoPercent, formatFlightDate |
 | `src/types/database.ts` | LIVE | TypeScript types for all Supabase tables |
 | `src/proxy.ts` | LIVE | Role-based middleware |
+| `src/lib/cart.ts` | LIVE | zustand cart store with localStorage persist |
+| `src/lib/stripe.ts` | LIVE | Nullable Stripe client; soft warn if unconfigured |
 | `src/lib/order-engine.ts` | NOT BUILT | Order window state machine |
 | `src/lib/route-optimiser.ts` | NOT BUILT | Delivery route optimisation |
 | `src/lib/notifications.ts` | NOT BUILT | Twilio SMS/WhatsApp dispatcher |
@@ -159,7 +167,7 @@ Last updated: 2026-04-11 (Session C)
 | Vercel | LIVE | Project "vitifish", team "jovis-projects-e419e68a", auto-deploys on push to main |
 | Supabase | LIVE | AU region, anon key set in Vercel |
 | Clerk | LIVE | Auth working; **session token NOT customised** (see Known Issues) |
-| Stripe | NOT CONNECTED | Keys not yet added |
+| Stripe | PARTIALLY CONNECTED | Code ready; `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` needed in Vercel |
 | Twilio | NOT CONNECTED | Keys not yet added |
 | Mapbox | NOT CONNECTED | Keys not yet added |
 

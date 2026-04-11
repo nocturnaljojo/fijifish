@@ -33,6 +33,49 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session D — 2026-04-11 — Cart + Stripe checkout, page reduction, premium placeholders
+
+### P1: Premium gradient placeholders (FishCard.tsx)
+- Hero (Walu): dark gradient bg, "WALU" watermark at 4% opacity, fish silhouette SVG, "First catch photo arriving soon" footer text
+- Regular cards: dark gradient bg, fish name watermark at 4% opacity
+- No broken image tags, no emoji placeholders
+
+### P2: Homepage reduced from 13 → 8 sections
+- Removed GaloaMap and ImpactFeed from homepage
+- New stub pages: `/supply-chain` (GaloaMap + 3-step journey), `/impact` (ImpactFeed)
+- HeroSection secondary CTA → `/supply-chain`
+- VillagePreview "Learn more" → `/supply-chain`; fold April 2026 Community Goal banner into VillagePreview
+- Combined DeliveryZoneBanner + DeliveryDemandPoll into one `#delivery-demand` section
+
+### P3: Full cart + Stripe checkout
+- `src/lib/cart.ts` — zustand store with localStorage persist; CartItem + CartStore; openCart/closeCart/addItem/updateQuantity/removeItem/clearCart/totalCents/totalKg/itemCount
+- `src/lib/stripe.ts` — nullable Stripe client; soft warn if no key; apiVersion 2026-03-25.dahlia
+- `src/components/CartDrawer.tsx` — slide-in drawer from right; qty +/- with 1kg min; remove button; total; Checkout → /checkout; framer-motion AnimatePresence
+- `src/components/CartPortal.tsx` — client wrapper for CartDrawer; added to root layout.tsx
+- `src/components/Navbar.tsx` — CartButton with ShoppingBag icon + badge count (lucide-react)
+- `src/components/FishCard.tsx` — "Order Now" / "Secure Your Order" + "✅ Added!" states; hooks moved before early return (rules-of-hooks fix)
+- `src/app/checkout/page.tsx` — server component; auth-gated (redirects to /sign-in); renders CheckoutForm
+- `src/app/checkout/CheckoutForm.tsx` — delivery form; cart summary; POST /api/checkout; error display
+- `src/app/api/checkout/route.ts` — validates items + delivery; checks flight window; validates inventory; upserts users + customers; creates order + order_items; calls rpc("increment_reserved_kg") non-blocking; creates Stripe checkout session
+- `src/app/order/success/page.tsx` — 4-step timeline; share button via navigator.share; "use client"
+- `src/app/api/webhooks/stripe/route.ts` — signature verification; checkout.session.completed → update order status to confirmed; idempotent
+
+### Build fixes
+- Stripe apiVersion updated to 2026-03-25.dahlia (matched installed SDK)
+- order/success: added "use client" (had onClick handler in server component)
+- rpc().then().catch() type error → void rpc() (non-blocking fire-and-forget)
+
+### Pre-commit: lint 0 errors · tsc 0 errors · build ✓ 26 routes
+
+### Next up
+- [ ] Add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` to Vercel env vars
+- [ ] Create `increment_reserved_kg` Supabase RPC function (non-blocking; checkout works without it)
+- [ ] Admin: unlock_status toggle in pricing panel
+- [ ] Wire realtime vote counts via Supabase realtime
+- [ ] Supplier portal (Phase 2)
+
+---
+
 ## Session C — 2026-04-11 — Gamification: unlock board for fish species + delivery zones
 
 ### Concept

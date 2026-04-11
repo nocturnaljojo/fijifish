@@ -18,8 +18,6 @@ import DeliveryZoneBanner from "@/components/DeliveryZoneBanner";
 import HeroSection from "@/components/HeroSection";
 import FishCard, { type FishCardData } from "@/components/FishCard";
 import ProcessSteps from "@/components/ProcessSteps";
-import GaloaMap from "@/components/GaloaMap";
-import ImpactFeed from "@/components/ImpactFeed";
 import UnlockBoard, { type LockedFish } from "@/components/UnlockBoard";
 import UnlockCelebration from "@/components/UnlockCelebration";
 import DeliveryDemandPoll from "@/components/DeliveryDemandPoll";
@@ -331,23 +329,15 @@ export default async function Home() {
         {/* 5 — Reef to Table: 3-step process */}
         <ProcessSteps />
 
-        {/* 6 — Delivery zone awareness */}
+        {/* 6 — Delivery zones + unlock your area (combined) */}
         <DeliveryZoneBanner />
-
-        {/* 7 — Galoa animated map */}
-        <GaloaMap />
-
-        {/* 8 — Delivery area unlock poll */}
-        <section id="delivery-demand" className="px-4 py-12 sm:py-16 scroll-mt-20">
+        <section id="delivery-demand" className="px-4 py-10 sm:py-12 scroll-mt-20">
           <div className="max-w-6xl mx-auto">
             <DeliveryDemandPoll species={surveySpecies} />
           </div>
         </section>
 
-        {/* 9 — Impact stories feed */}
-        <ImpactFeed />
-
-        {/* 10 — Village preview */}
+        {/* 7 — Village + community impact (combined, compact) */}
         <VillagePreview village={village} />
       </main>
 

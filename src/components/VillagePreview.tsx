@@ -95,13 +95,29 @@ export default function VillagePreview({
                 </div>
               )}
 
-              <div className="mt-auto pt-2">
+              {/* Community goal — folded in from ImpactFeed */}
+              <div className="p-3.5 rounded-xl bg-lagoon-green/5 border border-lagoon-green/20">
+                <p className="text-[10px] font-mono text-lagoon-green uppercase tracking-wider mb-1">
+                  April 2026 — Community Goal
+                </p>
+                <p className="text-text-secondary text-xs leading-relaxed">
+                  Your orders this month are funding a new{" "}
+                  <strong className="text-lagoon-green">ice machine</strong> for Galoa Village.
+                </p>
+              </div>
+
+              <div className="mt-auto pt-1 flex items-center gap-4">
                 <a
-                  href="/villages/galoa"
+                  href="/supply-chain"
                   className="inline-flex items-center gap-1.5 text-ocean-teal text-sm font-medium hover:text-[#29b6f6] transition-colors"
                 >
-                  Learn more about Galoa
-                  <span aria-hidden="true">→</span>
+                  Supply chain →
+                </a>
+                <a
+                  href="/impact"
+                  className="inline-flex items-center gap-1.5 text-lagoon-green text-sm font-medium hover:text-[#a5d6a7] transition-colors"
+                >
+                  Impact stories →
                 </a>
               </div>
             </div>

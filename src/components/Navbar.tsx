@@ -1,8 +1,35 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ShoppingBag } from "lucide-react";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { useRole } from "@/lib/roles-client";
+import { useCart } from "@/lib/cart";
+
+function CartButton() {
+  const { itemCount, openCart } = useCart();
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
+  const count = mounted ? itemCount() : 0;
+
+  return (
+    <button
+      type="button"
+      onClick={openCart}
+      className="relative p-1.5 rounded-lg hover:bg-white/5 text-text-secondary hover:text-text-primary transition-colors"
+      aria-label={`Cart${count > 0 ? ` (${count} item${count !== 1 ? "s" : ""})` : ""}`}
+    >
+      <ShoppingBag size={18} />
+      {count > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-ocean-teal text-bg-primary text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </button>
+  );
+}
 
 export default function Navbar() {
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
@@ -12,6 +39,9 @@ export default function Navbar() {
   return (
     <nav className="w-full bg-bg-primary border-b border-white/5 z-50">
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-end h-10">
+        {/* Cart always visible */}
+        <CartButton />
+
         {!isLoaded ? null : !isSignedIn ? (
           /* Signed out — show sign-in / sign-up links */
           <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import CartPortal from "@/components/CartPortal";
 import "./globals.css";
 
 const plexMono = IBM_Plex_Mono({
@@ -73,6 +74,7 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col bg-bg-primary text-text-primary font-sans">
           {children}
+          <CartPortal />
         </body>
       </html>
     </ClerkProvider>

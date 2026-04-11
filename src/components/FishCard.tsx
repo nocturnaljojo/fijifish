@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import CapacityBar from "./CapacityBar";
 import CountdownTimer from "./CountdownTimer";
 import { FLIGHT_CONFIG, THRESHOLDS } from "@/lib/config";
+import { useCart } from "@/lib/cart";
 
 export interface FishCardData {
   id: string;
@@ -26,6 +28,21 @@ function formatPrice(cents: number): string {
 
 function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt: number }) {
   const isSoldOut = fish.available_kg <= 0;
+  const { addItem, openCart, items } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+  const inCart = items.some((i) => i.fishSpeciesId === fish.id);
+
+  function handleAddToCart() {
+    addItem({
+      fishSpeciesId: fish.id,
+      fishName: fish.name_fijian ?? fish.name_english,
+      priceAudCents: fish.price_aud_cents,
+      maxAvailableKg: Math.floor(fish.available_kg),
+    });
+    setJustAdded(true);
+    openCart();
+    setTimeout(() => setJustAdded(false), 2000);
+  }
 
   return (
     <article className="relative md:col-span-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
@@ -35,17 +52,26 @@ function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2">
-        {/* Image placeholder */}
-        <div className="relative aspect-video sm:aspect-auto sm:min-h-[280px] bg-bg-tertiary flex items-center justify-center overflow-hidden">
+        {/* Image placeholder — premium gradient, not a broken image */}
+        <div className="relative aspect-video sm:aspect-auto sm:min-h-[280px] overflow-hidden" style={{ background: "linear-gradient(135deg, #0d1520 0%, #0a1628 50%, #071018 100%)" }}>
           <div
             className="absolute inset-0"
             aria-hidden="true"
             style={{
               background:
-                "radial-gradient(ellipse at 40% 40%, rgba(79,195,247,0.1) 0%, transparent 60%), " +
-                "radial-gradient(ellipse at 70% 70%, rgba(255,171,64,0.06) 0%, transparent 50%)",
+                "radial-gradient(ellipse at 30% 30%, rgba(79,195,247,0.12) 0%, transparent 55%), " +
+                "radial-gradient(ellipse at 75% 70%, rgba(255,171,64,0.07) 0%, transparent 50%)",
             }}
           />
+          {/* WALU watermark */}
+          <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none" aria-hidden="true">
+            <span className="text-8xl font-black text-white/[0.04] tracking-widest">WALU</span>
+          </div>
+          {/* Fish silhouette SVG */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" viewBox="0 0 200 120" fill="none" aria-hidden="true">
+            <path d="M20 60 C40 30, 80 20, 120 30 C140 35, 160 45, 175 60 C160 75, 140 85, 120 90 C80 100, 40 90, 20 60 Z M175 60 L190 45 L195 60 L190 75 Z" fill="white"/>
+            <circle cx="130" cy="52" r="3" fill="white"/>
+          </svg>
           {isSoldOut && (
             <div className="absolute inset-0 bg-bg-primary/75 flex items-center justify-center z-10">
               <span className="font-mono font-bold text-reef-coral tracking-widest text-base uppercase border border-reef-coral/40 px-4 py-2 rounded-lg">
@@ -53,9 +79,8 @@ function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt
               </span>
             </div>
           )}
-          <div className="relative flex flex-col items-center gap-2 text-text-secondary select-none">
-            <span className="text-7xl opacity-25" aria-hidden="true">🐟</span>
-            <span className="text-xs font-mono opacity-25 tracking-widest uppercase">Photo coming soon</span>
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+            <span className="text-xs font-mono text-white/20 tracking-widest uppercase">First catch photo arriving soon</span>
           </div>
         </div>
 
@@ -112,13 +137,24 @@ function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt
             <button
               type="button"
               disabled={isSoldOut}
+              onClick={handleAddToCart}
               className={`w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] transition-all ${
                 isSoldOut
                   ? "bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
+                  : justAdded
+                  ? "bg-lagoon-green text-bg-primary"
+                  : inCart
+                  ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
                   : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
               }`}
             >
-              {isSoldOut ? "Sold Out" : "Secure Your Order — A$35/kg"}
+              {isSoldOut
+                ? "Sold Out"
+                : justAdded
+                ? "✅ Added to cart!"
+                : inCart
+                ? "In Cart — Add Another kg"
+                : `Secure Your Order — ${formatPrice(fish.price_aud_cents)}/kg`}
             </button>
             {!isSoldOut && (
               <p className="text-xs text-text-secondary text-center font-mono">
@@ -147,6 +183,15 @@ export default function FishCard({
 }) {
   const closeAt = orderCloseAt ?? FLIGHT_CONFIG.orderCloseAt;
 
+  // Hooks must be called unconditionally before any early returns
+  const { addItem, openCart, items } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+
+  const isSoldOut = fish.available_kg <= 0;
+  const displayName = fish.name_fijian ?? fish.name_english;
+  const subName = fish.name_fijian ? fish.name_english : null;
+  const inCart = items.some((i) => i.fishSpeciesId === fish.id);
+
   if (isHero) {
     return (
       <motion.div
@@ -161,9 +206,17 @@ export default function FishCard({
     );
   }
 
-  const isSoldOut = fish.available_kg <= 0;
-  const displayName = fish.name_fijian ?? fish.name_english;
-  const subName = fish.name_fijian ? fish.name_english : null;
+  function handleAddToCart() {
+    addItem({
+      fishSpeciesId: fish.id,
+      fishName: displayName,
+      priceAudCents: fish.price_aud_cents,
+      maxAvailableKg: Math.floor(fish.available_kg),
+    });
+    setJustAdded(true);
+    openCart();
+    setTimeout(() => setJustAdded(false), 2000);
+  }
 
   return (
     <motion.article
@@ -173,22 +226,21 @@ export default function FishCard({
       transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
       className="flex flex-col bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden"
     >
-      {/* Image */}
-      <div className="relative w-full aspect-video bg-bg-tertiary flex items-center justify-center overflow-hidden">
+      {/* Image — premium gradient placeholder */}
+      <div className="relative w-full aspect-video overflow-hidden" style={{ background: "linear-gradient(135deg, #0d1520 0%, #0a1628 50%, #071018 100%)" }}>
         <div
           className="absolute inset-0"
           aria-hidden="true"
           style={{
             background:
-              "radial-gradient(ellipse at 40% 40%, rgba(79,195,247,0.06) 0%, transparent 60%), " +
-              "radial-gradient(ellipse at 70% 70%, rgba(102,187,106,0.04) 0%, transparent 50%)",
+              "radial-gradient(ellipse at 35% 35%, rgba(79,195,247,0.07) 0%, transparent 55%), " +
+              "radial-gradient(ellipse at 70% 65%, rgba(102,187,106,0.05) 0%, transparent 50%)",
           }}
         />
-        <div className="relative flex flex-col items-center gap-2 text-text-secondary select-none">
-          <span className="text-5xl opacity-30" aria-hidden="true">🐟</span>
-          <span className="text-xs font-mono opacity-30 tracking-widest uppercase">Photo coming soon</span>
+        {/* Fish name watermark */}
+        <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none" aria-hidden="true">
+          <span className="text-5xl font-black text-white/[0.04] tracking-widest uppercase">{displayName}</span>
         </div>
-
         {isSoldOut && (
           <div className="absolute inset-0 bg-bg-primary/75 flex items-center justify-center">
             <span className="font-mono font-bold text-reef-coral tracking-widest text-base uppercase border border-reef-coral/40 px-4 py-2 rounded-lg">
@@ -255,9 +307,16 @@ export default function FishCard({
             <div className="space-y-1.5">
               <button
                 type="button"
-                className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98] transition-all"
+                onClick={handleAddToCart}
+                className={`w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] transition-all ${
+                  justAdded
+                    ? "bg-lagoon-green text-bg-primary"
+                    : inCart
+                    ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
+                    : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
+                }`}
               >
-                Order Now
+                {justAdded ? "✅ Added!" : inCart ? "In Cart — Add Another" : "Order Now"}
               </button>
               {fish.available_kg < fish.total_kg * (THRESHOLDS.cargoFillingFast / 100) && (
                 <p className="text-xs text-text-secondary text-center font-mono">

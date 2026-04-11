@@ -105,7 +105,7 @@ export default function HeroSection() {
 
           {/* Secondary CTA */}
           <a
-            href="#village"
+            href="/supply-chain"
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-text-secondary font-medium text-base min-h-[56px] hover:border-ocean-teal/40 hover:text-text-primary transition-all w-full sm:w-auto backdrop-blur-sm bg-white/5"
           >
             See How We Support Fiji
