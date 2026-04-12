@@ -177,26 +177,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   await supabase.from("order_items").insert(orderItems);
 
-  // ── Reserve inventory ─────────────────────────────────────────────────────
-
-  for (const item of items) {
-    const inv = inventoryMap.get(item.fishSpeciesId)!;
-    await supabase
-      .from("inventory_availability")
-      .update({ reserved_kg: supabase.rpc as unknown as number })
-      .eq("id", inv.id);
-  }
-
-  // Use raw SQL to safely increment reserved_kg
-  for (const item of items) {
-    const inv = inventoryMap.get(item.fishSpeciesId)!;
-    void supabase.rpc("increment_reserved_kg", {
-      inv_id: inv.id,
-      delta: item.quantityKg,
-    }); // non-blocking; webhook will reconcile
-  }
-
-  // ── Get fish names for Stripe line items ──────────────────────────────────
+  // ── Get fish names (needed for Stripe line items + sold-out error messages) ─
 
   const { data: speciesRows } = await supabase
     .from("fish_species")
@@ -208,6 +189,27 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
       (s) => [s.id, s.name_fijian ?? s.name_english],
     ),
   );
+
+  // ── Reserve inventory (atomic, race-condition safe) ──────────────────────
+  // increment_reserved_kg returns 1 on success, 0 if stock ran out between
+  // our availability check above and this reservation step.
+
+  for (const item of items) {
+    const inv = inventoryMap.get(item.fishSpeciesId)!;
+    const { data: rowsUpdated, error: rpcError } = await supabase.rpc(
+      "increment_reserved_kg",
+      { inv_id: inv.id, delta: item.quantityKg },
+    );
+
+    if (rpcError || rowsUpdated === 0) {
+      // Roll back the order and order_items so they don't sit as phantoms
+      await supabase.from("orders").delete().eq("id", order.id);
+      return errorResponse(
+        `Sorry — ${speciesMap.get(item.fishSpeciesId) ?? "that fish"} just sold out. Please refresh and try again.`,
+        409,
+      );
+    }
+  }
 
   // ── Create Stripe checkout session ────────────────────────────────────────
 
