@@ -123,6 +123,16 @@ export default function HeroSection() {
           ⚠️ Don&apos;t miss out — order before the catch window closes or cargo space fills up
         </motion.p>
 
+        {/* Freshness guarantee */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.65 }}
+          className="mt-3 text-sm font-mono text-lagoon-green/80 text-center"
+        >
+          ✅ 100% Freshness Guarantee — full refund if your fish isn&apos;t perfect
+        </motion.p>
+
         {/* Trust badges */}
         <motion.div
           initial={{ opacity: 0 }}

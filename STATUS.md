@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session F)
+Last updated: 2026-04-12 (Session G)
 
 ---
 
@@ -38,6 +38,8 @@ Last updated: 2026-04-11 (Session F)
 | `/order/success` | Post-payment confirmation + 4-step timeline | LIVE |
 | `/supply-chain` | Supply chain story (stub) | LIVE |
 | `/impact` | Village impact stories (stub) | LIVE |
+| `/privacy` | Privacy Policy page | LIVE |
+| `/terms` | Terms of Service page | LIVE |
 | `/account` | Buyer account — orders, history, preferences | LIVE |
 | `/track/[orderId]` | Shipment tracking | NOT BUILT |
 
@@ -86,7 +88,6 @@ Last updated: 2026-04-11 (Session F)
 | Component | Page | Description |
 |-----------|------|-------------|
 | `GaloaMap.tsx` | `/supply-chain` | SVG/CSS animated map: zoom→marker→flight path→labels |
-| `FishSurvey.tsx` | `/` (UnlockBoard area) | Anonymous vote on fish species interest |
 | `ImpactFeed.tsx` | `/impact` | Village impact stories from Supabase |
 
 ### Admin components

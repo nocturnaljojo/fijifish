@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { X, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
+import { FLIGHT_CONFIG } from "@/lib/config";
+import CountdownTimer from "./CountdownTimer";
 
 function formatPrice(cents: number): string {
   return `A$${(cents / 100).toFixed(2)}`;
@@ -149,6 +151,19 @@ export default function CartDrawer() {
                 <p className="text-[10px] text-text-secondary font-mono">
                   ✓ Delivery included · Vacuum-sealed fillets · 48hr ocean to door
                 </p>
+                {/* Delivery date + closing reminder */}
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
+                  <span aria-hidden="true">📦</span>
+                  <span>Delivering <span className="text-text-primary font-medium">{FLIGHT_CONFIG.nextDeliveryLabel}</span></span>
+                  <span className="opacity-40 mx-0.5">·</span>
+                  <span>closes in</span>
+                  <CountdownTimer
+                    targetTimestamp={FLIGHT_CONFIG.orderCloseAt}
+                    className="text-[10px] font-bold"
+                    baseColor="text-reef-coral"
+                    urgentColor="text-reef-coral"
+                  />
+                </div>
                 <Link
                   href="/checkout"
                   onClick={closeCart}
@@ -156,6 +171,9 @@ export default function CartDrawer() {
                 >
                   Checkout — {formatPrice(totalCents())}
                 </Link>
+                <p className="text-[10px] text-text-secondary font-mono text-center opacity-60">
+                  🔒 Secured by Stripe
+                </p>
                 <button
                   type="button"
                   onClick={closeCart}

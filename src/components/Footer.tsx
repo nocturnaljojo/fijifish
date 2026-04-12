@@ -1,9 +1,10 @@
+import Link from "next/link";
 import FeedbackForm from "./FeedbackForm";
 
 const LINKS = [
-  { label: "About", href: "#" },
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Service", href: "#" },
+  { label: "About", href: "/supply-chain" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
 ];
 
 export default function Footer() {
@@ -18,9 +19,6 @@ export default function Footer() {
             </div>
             <p className="text-text-secondary text-sm leading-relaxed">
               Pacific Seafood — Wild-caught in Fiji, delivered to the Riverina.
-            </p>
-            <p className="text-text-secondary text-xs font-mono mt-3 opacity-60">
-              ABN: [pending registration]
             </p>
           </div>
 
@@ -61,13 +59,13 @@ export default function Footer() {
             </h3>
             <div className="space-y-2.5">
               {LINKS.map((link) => (
-                <a
+                <Link
                   key={link.label}
                   href={link.href}
                   className="block text-sm text-text-secondary hover:text-ocean-teal transition-colors"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
               <FeedbackForm />
             </div>

@@ -116,6 +116,13 @@ function HeroFishCard({ fish, orderCloseAt }: { fish: FishCardData; orderCloseAt
 
           <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
 
+          {/* Low-stock badge */}
+          {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide bg-reef-coral/10 border border-reef-coral/25 text-reef-coral w-fit">
+              Only {Math.round(fish.available_kg)}kg left!
+            </span>
+          )}
+
           {/* Mini countdown */}
           <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse shrink-0" aria-hidden="true" />
@@ -273,6 +280,13 @@ export default function FishCard({
         </div>
 
         <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
+
+        {/* Low-stock badge */}
+        {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide bg-reef-coral/10 border border-reef-coral/25 text-reef-coral w-fit">
+            Only {Math.round(fish.available_kg)}kg left!
+          </span>
+        )}
 
         {/* Mini countdown */}
         <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary">
