@@ -29,9 +29,10 @@ export default function CountdownTimer({
   urgentColor,
   baseColor,
 }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetTimestamp));
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: -1 });
 
   useEffect(() => {
+    setTimeLeft(getTimeLeft(targetTimestamp));
     const timer = setInterval(() => {
       setTimeLeft(getTimeLeft(targetTimestamp));
     }, 1000);
@@ -40,6 +41,14 @@ export default function CountdownTimer({
 
   const isCritical =
     timeLeft.totalSeconds > 0 && timeLeft.totalSeconds < 6 * 3600;
+
+  if (timeLeft.totalSeconds === -1) {
+    return (
+      <span className={`font-mono tabular-nums ${baseColor ?? "text-ocean-teal"} ${className}`}>
+        --h --m --s
+      </span>
+    );
+  }
 
   if (timeLeft.totalSeconds === 0) {
     return (

@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
  * /admin/*     → admin only
  * /supplier/*  → supplier + admin
  * /driver/*    → driver + admin
- * /order, /account → any authenticated user
+ * /account, /track → any authenticated user
+ * /order/success  → public (Stripe redirect target — must NOT be auth-gated)
  * /catch/*     → public (QR code traceability pages)
  * Everything else → public
  */
@@ -14,7 +15,7 @@ import { NextResponse } from "next/server";
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isSupplierRoute = createRouteMatcher(["/supplier(.*)"]);
 const isDriverRoute = createRouteMatcher(["/driver(.*)"]);
-const isAuthRoute = createRouteMatcher(["/order(.*)", "/account(.*)", "/track(.*)"]);
+const isAuthRoute = createRouteMatcher(["/account(.*)", "/track(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { sessionClaims, userId } = await auth();
