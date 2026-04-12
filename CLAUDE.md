@@ -29,8 +29,27 @@ Read this before building any feature. If spec and code disagree, spec wins.
 2. State: current phase, last built, known issues, next task
 3. Load relevant skills before writing code
 
+Template output:
+```
+Phase: [current phase]
+Last built: [last completed task from SESSIONS.md]
+Known issues: [from STATUS.md known issues section]
+Next task: [what I'm about to do]
+```
+
 ## At session end
 Run /wrap-up
+
+## Anti-hallucination rules — MUST FOLLOW
+- NEVER assume a function, hook, table, or column exists — Grep or Read to verify first
+- NEVER invent Supabase column names — check `src/types/database.ts` and migrations
+- NEVER invent API routes — check `STATUS.md` API routes table
+- NEVER assume a component accepts a prop — read the component interface first
+- NEVER assume a file exists — use Glob to confirm before reading or importing
+- NEVER assume `npm run X` works — check `package.json` scripts first
+- NEVER state that you "just ran" something you didn't actually call a tool for
+- When uncertain: say so, then use a tool to verify before proceeding
+- If a tool call is denied: do NOT pretend you did it; ask how to proceed
 
 ## 4 user roles (Clerk)
 - buyer: browse, order (AU only), track, rate
@@ -61,10 +80,12 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 ## Reference files
 - FIJIFISH-WEBAPP-SPEC-v3.md — COMPLETE product spec
 - STATUS.md — live components, routes, tables, what's built vs not
+- MARKETING.md — brand voice, copy guidelines, messaging hierarchy
 - src/lib/supabase.ts — three Supabase clients (public/browser/server)
 - src/lib/roles.ts — server-side role helpers (getUserRole, requireRole, getVillageId)
 - src/lib/roles-client.ts — client-side useRole() hook
 - src/lib/pricing.ts — AUD/FJD dual currency logic
+- src/lib/cart.ts — zustand cart store (addItem, updateQuantity, openCart, items)
 - src/proxy.ts — role-based middleware (admin/supplier/driver route protection)
 - supabase/migrations/ — schema source of truth (001–005, 007–008; 006 skipped)
 - NOT YET BUILT: src/lib/order-engine.ts, src/lib/route-optimiser.ts, src/lib/notifications.ts, src/lib/scarcity.ts
@@ -86,6 +107,19 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - Admin API routes → `createServerSupabaseClient()` after `requireAdmin()` check
 - Components receive data via props from page.tsx — NEVER fetch inside components (except client-side interactions like voting)
 - Before EVERY commit → run the `/pre-commit` skill checklist
+
+## Zustand cart pattern
+```typescript
+const { addItem, updateQuantity, openCart, items } = useCart();
+// addItem starts at 1 kg; use updateQuantity(id, delta) for additional kg
+// Reorder pattern: addItem({...}) → updateQuantity(fishSpeciesId, qty-1) → openCart()
+```
+
+## Change-size rules
+- **Tiny** (1-3 files, config/copy/style): just do it
+- **Small** (1 feature, <10 files): read spec section → implement → test → commit
+- **Medium** (multi-file feature, new routes): read spec + STATUS.md + relevant skills → plan → implement → QA → commit
+- **Large** (new phase, major refactor): run /plan first, get approval before touching code
 
 ## Regression prevention
 - NEVER delete a working component without checking all imports first
@@ -109,7 +143,7 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - NEVER skip Spam Act 2003 compliance on broadcasts
 - NEVER use createServerSupabaseClient() in public page components
 
-## Skills (14)
+## Skills (15)
 - /clerk-auth — roles, middleware, Supabase sync, village_id on suppliers
 - /worldview-ui — dark HUD design system, colours, typography, components
 - /order-window-logic — flight-driven state machine, scarcity mechanics
@@ -124,3 +158,4 @@ NEVER use createServerSupabaseClient() in public page components. This was the r
 - /fiji-compliance — BICON, export certs, cold chain
 - /qa-playwright — Playwright browser testing against the live app
 - /pre-commit — checklist to run before every commit (types, lint, build, docs)
+- /quality-gate — full quality check: types + lint + build + audit

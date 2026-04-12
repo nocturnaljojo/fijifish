@@ -14,6 +14,8 @@ CRITICAL RULES:
 6. If a test fails, describe what's wrong and what the spec says it should be — but do NOT fix it. File an issue in SESSIONS.md under "Known Issues" instead.
 
 TEST CHECKLIST (run every QA session):
+
+### Homepage
 - Homepage loads on localhost:3000
 - Dark WorldView theme applied (#0a0f1a background, not white, not default)
 - IBM Plex Mono font used for all numbers, prices, countdown
@@ -36,11 +38,29 @@ TEST CHECKLIST (run every QA session):
 - Clerk sign-up page loads at /sign-up
 - Footer renders with route chain and links
 - Village preview section renders
-- Galoa map animation renders (intersection observer trigger)
 - Fish interest survey is accessible from homepage
 - Delivery demand poll renders beside fish survey
 - Feedback form is accessible
+
+### Cart + Checkout
+- Clicking "Add to Order" on a fish card opens the cart drawer
+- Cart drawer shows item with name, price, quantity controls
+- Quantity +/- buttons update the displayed qty
+- Remove button removes item from cart
+- Proceed to Checkout button is present in the drawer
+- /checkout route loads (auth-gated — should redirect to sign-in if not logged in)
+- /order/success route loads without white screen
+
+### Account page
+- /account route loads (auth-gated — redirect to sign-in if not logged in)
+- When logged in: shows "Active Orders", "Order History", "Preferences" sections
+- No white screen / layout errors on /account
+
+### Other pages
+- /supply-chain loads with journey steps and Galoa map
+- /impact loads with impact feed section
 - /catch/[batchCode] route loads (stub page, not 404)
+- Both /supply-chain and /impact CTA buttons show price from config (not hardcoded)
 
 SEVERITY LEVELS:
 - CRITICAL: Page doesn't load, white screen, console errors blocking render, wrong theme

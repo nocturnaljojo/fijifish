@@ -73,6 +73,8 @@ export const PRICING_CONFIG = {
   },
   /** Default price in AUD cents, shown when DB price not available */
   defaultPriceAudCents: 3500,
+  /** Formatted default price label for static hero/CTA components. Derived from defaultPriceAudCents. */
+  defaultPriceLabel: "A$35",
 } as const;
 
 // ── Thresholds (drive UI behaviour) ──────────────────────────────────────────

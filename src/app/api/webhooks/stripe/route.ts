@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withErrorHandling } from "@/lib/api-helpers";
 import { stripe } from "@/lib/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
-export async function POST(req: NextRequest) {
+export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!stripe) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
   }
@@ -54,4 +55,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
-}
+});

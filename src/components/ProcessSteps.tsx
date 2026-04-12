@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ShoppingCart, Fish, Truck, type LucideIcon } from "lucide-react";
-import { DELIVERY_CONFIG, FLIGHT_CONFIG } from "@/lib/config";
+import { DELIVERY_CONFIG, FLIGHT_CONFIG, PRICING_CONFIG } from "@/lib/config";
 
 // ── Step definitions ──────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ function StepCard({ step, className = "" }: { step: StepData; className?: string
           className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm min-h-[52px] transition-all hover:opacity-90 active:scale-[0.98]"
           style={{ backgroundColor: step.accentColor, color: "#0a0f1a" }}
         >
-          Order Now — A$35/kg
+          Order Now — {PRICING_CONFIG.defaultPriceLabel}/kg
           <span aria-hidden="true">→</span>
         </a>
       )}

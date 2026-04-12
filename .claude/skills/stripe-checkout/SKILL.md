@@ -17,7 +17,7 @@ allowed-tools: Read, Grep
 - Create Checkout Session server-side in API route
 - Redirect customer to Stripe-hosted page
 - Webhook receives payment confirmation
-- Order status transitions from pending → confirmed → paid on successful payment
+- Order status transitions from pending → confirmed on successful payment (checkout.session.completed)
 
 ## Key fields
 - line_items: one per fish species in order, with quantity_kg and price
@@ -26,12 +26,12 @@ allowed-tools: Read, Grep
 
 ## Webhook handling (src/app/api/webhooks/stripe/route.ts)
 - Verify webhook signature (STRIPE_WEBHOOK_SECRET)
-- Handle: checkout.session.completed → mark order paid, reduce inventory available_kg
+- Handle: checkout.session.completed → mark order confirmed, reduce inventory available_kg
 - Handle: charge.refunded → mark order refunded, restore available_kg
 - Idempotent: check if order already paid before updating
 
 ## On successful payment:
-- Order status → paid
+- Order status → confirmed
 - inventory_availability.reserved_kg increases by order quantity
 - inventory_availability.available_kg decreases (auto-calculated)
 - All connected browsers see capacity bar update via Supabase Realtime

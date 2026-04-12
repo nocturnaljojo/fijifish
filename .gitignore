@@ -38,6 +38,17 @@ yarn-error.log*
 # local notes / scratch
 fijifish_clerk.xlsx
 *.xlsx
+.env.txt
+
+# office temp files
+~$*
+
+# playwright session logs
+.playwright-mcp/
+
+# pdf/docx design artefacts (not source)
+*.pdf
+*.docx
 
 # vercel
 .vercel

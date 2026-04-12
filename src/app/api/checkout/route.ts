@@ -3,6 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { withErrorHandling, requireAuth, errorResponse } from "@/lib/api-helpers";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe";
+import { isAustralian } from "@/lib/pricing";
 
 interface CartItemInput {
   fishSpeciesId: string;
@@ -101,10 +102,23 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const email = clerkUser.emailAddresses[0]?.emailAddress ?? null;
   const fullName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || null;
 
+  // ── AU-only gate ───────────────────────────────────────────────────────────
+  // Spec: non-AU users cannot reach Stripe checkout.
+  // Source: Clerk publicMetadata.country_code (set on sign-up or by admin).
+  // If not set, assume AU (platform is AU-targeted; non-AU users should not sign up).
+  const countryCode =
+    typeof clerkUser.publicMetadata?.country_code === "string"
+      ? (clerkUser.publicMetadata.country_code as string).toUpperCase()
+      : "AU"; // default to AU if not set
+
+  if (!isAustralian(countryCode)) {
+    return errorResponse("Checkout is only available for Australian customers.", 403);
+  }
+
   const { data: dbUser } = await supabase
     .from("users")
     .upsert(
-      { clerk_id: userId, role: "buyer", full_name: fullName, email, country_code: "AU" },
+      { clerk_id: userId, role: "buyer", full_name: fullName, email, country_code: countryCode },
       { onConflict: "clerk_id" },
     )
     .select("id")

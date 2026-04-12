@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CARGO_CONFIG, THRESHOLDS } from "@/lib/config";
+import { CARGO_CONFIG, THRESHOLDS, PRICING_CONFIG } from "@/lib/config";
 
 interface StickyOrderBarProps {
   cargoPercent?: number;
@@ -38,7 +38,7 @@ export default function StickyOrderBar({ cargoPercent }: StickyOrderBarProps = {
             🐟 Wild-caught Walu
           </p>
           <p className="font-mono font-bold text-sunset-gold text-base leading-none">
-            A$35<span className="text-xs font-normal text-text-secondary">/kg delivered</span>
+            {PRICING_CONFIG.defaultPriceLabel}<span className="text-xs font-normal text-text-secondary">/kg delivered</span>
           </p>
         </div>
         <a

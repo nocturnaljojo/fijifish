@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-11 (Session E)
+Last updated: 2026-04-11 (Session F)
 
 ---
 
@@ -76,14 +76,18 @@ Last updated: 2026-04-11 (Session E)
 | `CountdownTimer.tsx` | Countdown with `baseColor` prop; pulses in final hours |
 | `ProcessSteps.tsx` | 3-step how-it-works, whileInView stagger |
 | `DeliveryZoneBanner.tsx` | Delivery zone awareness section |
-| `GaloaMap.tsx` | SVG/CSS animated map: zoom→marker→flight path→labels |
-| `FishSurvey.tsx` | Anonymous vote on fish species interest |
 | `DeliveryDemandPoll.tsx` | Vote on delivery zones |
-| `ImpactFeed.tsx` | Village impact stories from Supabase |
 | `VillagePreview.tsx` | Galoa village preview card |
 | `Footer.tsx` | Footer with route chain and links |
 | `StickyOrderBar.tsx` | Mobile-only bottom bar, appears after scroll |
 | `FeedbackForm.tsx` | Slide-up modal, 5-star rating |
+
+### Active (other pages)
+| Component | Page | Description |
+|-----------|------|-------------|
+| `GaloaMap.tsx` | `/supply-chain` | SVG/CSS animated map: zoom→marker→flight path→labels |
+| `FishSurvey.tsx` | `/` (UnlockBoard area) | Anonymous vote on fish species interest |
+| `ImpactFeed.tsx` | `/impact` | Village impact stories from Supabase |
 
 ### Admin components
 | Component | Description |
@@ -200,6 +204,7 @@ Fix: Clerk Dashboard → Sessions → Customize session token → add `{ "metada
 
 All homepage components (`DeliveryBanner`, `UrgencyBanner`, `StickyOrderBar`, `FishCard`) now accept optional props from DB. `page.tsx` fetches live `flight_windows` + `inventory_availability` and passes through. Config values are fallbacks only.
 
+All "A$35" price labels centralised to `PRICING_CONFIG.defaultPriceLabel` in `src/lib/config.ts`.
+
 Remaining:
 - `TEST_INVENTORY` in `page.tsx` — still used when a species has no `inventory_availability` row for the current window
-- "A$35/kg" in `StickyOrderBar.tsx`, `ProcessSteps.tsx` — still static text (not species-specific)

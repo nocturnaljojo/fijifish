@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ImpactFeed from "@/components/ImpactFeed";
+import { PRICING_CONFIG } from "@/lib/config";
 
 export const metadata = {
   title: "Community Impact — FijiFish",
@@ -34,7 +35,7 @@ export default function ImpactPage() {
             href="/#fish-grid"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-ocean-teal text-bg-primary font-bold text-base hover:opacity-90 transition-opacity"
           >
-            Order Fresh Walu — A$35/kg
+            Order Fresh Walu — {PRICING_CONFIG.defaultPriceLabel}/kg
           </Link>
         </div>
       </div>

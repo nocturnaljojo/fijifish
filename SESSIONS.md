@@ -33,6 +33,42 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session F — 2026-04-11 — System upgrade: audit fixes, slash commands, quality gates
+
+### Fixes (from AUDIT.md)
+- **M1**: Centralised all `A$35` price strings to `PRICING_CONFIG.defaultPriceLabel` in `src/lib/config.ts`. Updated: `StickyOrderBar.tsx`, `ProcessSteps.tsx`, `HeroSection.tsx`, `impact/page.tsx`, `supply-chain/page.tsx`
+- **M7**: Fixed STATUS.md — moved GaloaMap, FishSurvey, ImpactFeed out of "Active on homepage" into correct "Active (other pages)" table
+- **M9**: Fixed `.claude/skills/stripe-checkout/SKILL.md` — changed "paid" to "confirmed" to match actual webhook implementation
+- **C1, C2, H1, H4, H6**: Applied in previous sessions (API route patterns, AU gate, Stripe webhook wrapper)
+
+### New slash commands (.claude/commands/)
+- `/plan` — read spec + STATUS, identify files, output plan, ask for approval
+- `/build` — implement in correct layer order, typecheck, lint, pre-commit, commit+push
+- `/review` — updated with spec compliance, security grep checks, hardcoded price check
+- `/fix` — root-cause first, minimal fix, lint, commit
+- `/wrap` — update SESSIONS + STATUS, lint, pre-commit, commit+push
+
+### New agent (.claude/agents/)
+- `auditor.md` — read-only auditor checking spec compliance, Supabase client misuse, API patterns, red lines, hooks rules, docs health
+
+### New skill (.claude/skills/quality-gate/)
+- `SKILL.md` — `npm run quality` (typecheck + lint + build) + security grep checks
+
+### CLAUDE.md updates
+- Added anti-hallucination rules section
+- Added session-start template output format
+- Added zustand cart pattern reference
+- Added change-size rules (tiny/small/medium/large)
+- Added MARKETING.md and cart.ts to reference files
+- Updated skills count: 14 → 15
+
+### package.json
+- Added `"typecheck": "tsc --noEmit"`
+- Added `"quality": "npm run typecheck && npm run lint && npm run build"`
+
+### qa-playwright skill
+- Extended test checklist with: Cart + Checkout, Account page, /supply-chain, /impact sections
+
 ## Session E — 2026-04-11 — My Account page: orders, history, preferences
 
 ### New files

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, type Transition } from "framer-motion";
+import { PRICING_CONFIG } from "@/lib/config";
 
 function fadeUp(delay = 0): {
   initial: { opacity: number; y: number };
@@ -60,7 +61,7 @@ export default function HeroSection() {
               backgroundImage: "linear-gradient(135deg, #4fc3f7 0%, #29b6f6 50%, #81d4fa 100%)",
             }}
           >
-            A$35/kg Delivered.
+            {PRICING_CONFIG.defaultPriceLabel}/kg Delivered.
           </span>
         </motion.h1>
 
@@ -99,7 +100,7 @@ export default function HeroSection() {
               ORDER NOW
             </span>
             <span className="relative text-lg font-bold">
-              Order Walu — A$35/kg
+              Order Walu — {PRICING_CONFIG.defaultPriceLabel}/kg
             </span>
           </a>
 
