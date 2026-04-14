@@ -1,14 +1,42 @@
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { CreateWindowForm, WindowRow } from "./WindowForm";
 
-async function getAllWindows() {
+type WindowWithCount = {
+  id: string;
+  flight_date: string;
+  flight_number: string | null;
+  order_open_at: string;
+  order_close_at: string;
+  status: string;
+  notes: string | null;
+  orderCount: number;
+};
+
+async function getAllWindows(): Promise<WindowWithCount[]> {
   try {
     const supabase = createServerSupabaseClient();
-    const { data } = await supabase
-      .from("flight_windows")
-      .select("id, flight_date, flight_number, order_open_at, order_close_at, status, notes")
-      .order("flight_date", { ascending: false });
-    return data ?? [];
+
+    const [{ data: windows }, { data: orderCounts }] = await Promise.all([
+      supabase
+        .from("flight_windows")
+        .select("id, flight_date, flight_number, order_open_at, order_close_at, status, notes")
+        .order("flight_date", { ascending: false }),
+      supabase
+        .from("orders")
+        .select("flight_window_id")
+        .not("status", "eq", "cancelled"),
+    ]);
+
+    // Build count map
+    const countMap: Record<string, number> = {};
+    for (const row of orderCounts ?? []) {
+      countMap[row.flight_window_id] = (countMap[row.flight_window_id] ?? 0) + 1;
+    }
+
+    return (windows ?? []).map((w) => ({
+      ...w,
+      orderCount: countMap[w.id] ?? 0,
+    }));
   } catch {
     return [];
   }

@@ -1,7 +1,16 @@
+import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import PhotoQueue from "./PhotoQueue";
 
-async function getPendingPhotos() {
+type TabId = "pending" | "approved" | "rejected";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "pending", label: "Pending" },
+  { id: "approved", label: "Approved" },
+  { id: "rejected", label: "Rejected" },
+];
+
+async function getPhotos(status: TabId) {
   try {
     const supabase = createServerSupabaseClient();
     const { data } = await supabase
@@ -17,7 +26,7 @@ async function getPendingPhotos() {
         villages ( name ),
         flight_windows ( flight_date, flight_number )
       `)
-      .eq("status", "pending")
+      .eq("status", status)
       .order("created_at", { ascending: false });
     return data ?? [];
   } catch {
@@ -25,32 +34,83 @@ async function getPendingPhotos() {
   }
 }
 
-export default async function PhotosPage() {
-  const photos = await getPendingPhotos();
+async function getCounts(): Promise<Record<TabId, number>> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data } = await supabase
+      .from("catch_photos")
+      .select("status");
+
+    const counts: Record<TabId, number> = { pending: 0, approved: 0, rejected: 0 };
+    for (const row of data ?? []) {
+      if (row.status in counts) {
+        counts[row.status as TabId]++;
+      }
+    }
+    return counts;
+  } catch {
+    return { pending: 0, approved: 0, rejected: 0 };
+  }
+}
+
+export default async function PhotosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const activeTab: TabId = (["pending", "approved", "rejected"].includes(tab ?? "") ? tab as TabId : "pending");
+
+  const [photos, counts] = await Promise.all([
+    getPhotos(activeTab),
+    getCounts(),
+  ]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-6">
         <p className="text-xs font-mono text-text-secondary uppercase tracking-widest mb-1">Admin</p>
-        <h1 className="text-2xl font-bold text-text-primary">Catch Photo Approval</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Catch Photos</h1>
         <p className="text-text-secondary text-sm mt-1">
-          Review and approve supplier photos. Approved photos become buyer-facing and set the species default image.
+          Review and approve supplier photos. Approved photos become buyer-facing.
         </p>
-        <div className="mt-3 flex items-center gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono border"
-            style={{
-              background: photos.length > 0 ? "rgba(255,171,64,0.08)" : "rgba(30,42,58,0.5)",
-              borderColor: photos.length > 0 ? "rgba(255,171,64,0.3)" : "rgba(30,42,58,0.8)",
-              color: photos.length > 0 ? "#ffab40" : "#90a4ae",
-            }}
-          >
-            {photos.length} pending
-          </span>
-        </div>
       </div>
 
-      <PhotoQueue photos={photos as unknown as Parameters<typeof PhotoQueue>[0]["photos"]} />
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 border-b border-white/10">
+        {TABS.map((t) => {
+          const isActive = t.id === activeTab;
+          return (
+            <Link
+              key={t.id}
+              href={`/admin/photos?tab=${t.id}`}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                isActive
+                  ? "border-ocean-teal text-ocean-teal"
+                  : "border-transparent text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              {t.label}
+              {counts[t.id] > 0 && (
+                <span
+                  className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    isActive
+                      ? "bg-ocean-teal/20 text-ocean-teal"
+                      : "bg-white/10 text-text-secondary"
+                  }`}
+                >
+                  {counts[t.id]}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+
+      <PhotoQueue
+        photos={photos as unknown as Parameters<typeof PhotoQueue>[0]["photos"]}
+        tab={activeTab}
+      />
     </div>
   );
 }

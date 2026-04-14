@@ -83,37 +83,45 @@ function PhotoCard({ photo }: { photo: CatchPhoto }) {
           {new Date(photo.created_at).toLocaleString("en-AU")}
         </p>
 
-        {/* Actions */}
-        <div className="flex gap-2 mt-auto pt-2">
-          <button
-            type="button"
-            disabled={loading !== null}
-            onClick={() => act("approve")}
-            className="flex-1 py-2 rounded-lg bg-lagoon-green/10 border border-lagoon-green/30 text-lagoon-green text-xs font-bold hover:bg-lagoon-green/20 disabled:opacity-50 transition-colors"
-          >
-            {loading === "approve" ? "..." : "✓ Approve"}
-          </button>
-          <button
-            type="button"
-            disabled={loading !== null}
-            onClick={() => act("reject")}
-            className="flex-1 py-2 rounded-lg bg-reef-coral/10 border border-reef-coral/30 text-reef-coral text-xs font-bold hover:bg-reef-coral/20 disabled:opacity-50 transition-colors"
-          >
-            {loading === "reject" ? "..." : "✕ Reject"}
-          </button>
-        </div>
+        {/* Actions — only for pending photos */}
+        {photo.status === "pending" && (
+          <div className="flex gap-2 mt-auto pt-2">
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => act("approve")}
+              className="flex-1 py-2 rounded-lg bg-lagoon-green/10 border border-lagoon-green/30 text-lagoon-green text-xs font-bold hover:bg-lagoon-green/20 disabled:opacity-50 transition-colors"
+            >
+              {loading === "approve" ? "..." : "✓ Approve"}
+            </button>
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => act("reject")}
+              className="flex-1 py-2 rounded-lg bg-reef-coral/10 border border-reef-coral/30 text-reef-coral text-xs font-bold hover:bg-reef-coral/20 disabled:opacity-50 transition-colors"
+            >
+              {loading === "reject" ? "..." : "✕ Reject"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default function PhotoQueue({ photos }: { photos: CatchPhoto[] }) {
+const EMPTY_MSG: Record<string, string> = {
+  pending: "No pending photos — all caught up!",
+  approved: "No approved photos yet.",
+  rejected: "No rejected photos.",
+};
+
+export default function PhotoQueue({ photos, tab = "pending" }: { photos: CatchPhoto[]; tab?: string }) {
   if (photos.length === 0) {
     return (
       <div className="py-20 text-center border border-dashed border-white/20 rounded-xl">
         <span className="text-4xl block mb-3" aria-hidden="true">📷</span>
-        <p className="text-text-secondary">No pending photos</p>
-        <p className="text-text-secondary text-xs mt-1">When suppliers upload catch photos, they appear here for approval.</p>
+        <p className="text-text-secondary">{EMPTY_MSG[tab] ?? "No photos."}</p>
+        <p className="text-text-secondary text-xs mt-1">When suppliers upload catch photos, they appear here.</p>
       </div>
     );
   }
