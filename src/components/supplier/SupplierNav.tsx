@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Camera, Clock } from "lucide-react";
+import { Home, Camera, Clock, Truck } from "lucide-react";
 
 const TABS = [
   { href: "/supplier", label: "Dashboard", icon: Home, exact: true },
   { href: "/supplier/photos", label: "Photos", icon: Camera, exact: false },
+  { href: "/supplier/tracking", label: "Tracking", icon: Truck, exact: false },
   { href: "/supplier/history", label: "History", icon: Clock, exact: false },
 ];
 

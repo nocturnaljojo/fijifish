@@ -116,6 +116,34 @@ export interface CatchPhoto {
   created_at: string;
 }
 
+export type ShipmentUpdateStatus =
+  | "caught"
+  | "processing"
+  | "packed"
+  | "at_airport"
+  | "cargo_accepted"
+  | "departed"
+  | "in_flight"
+  | "landed"
+  | "customs_cleared"
+  | "out_for_delivery"
+  | "delivered";
+
+export interface ShipmentUpdate {
+  id: string;
+  flight_window_id: string;
+  village_id: string;
+  status: ShipmentUpdateStatus;
+  updated_by: string | null;
+  photo_url: string | null;
+  note: string | null;
+  requires_admin_approval: boolean;
+  admin_approved: boolean | null;
+  admin_approved_by: string | null;
+  admin_approved_at: string | null;
+  created_at: string;
+}
+
 // ── Customers and orders ──────────────────────────────────────────────────────
 
 export interface Customer {

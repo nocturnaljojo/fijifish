@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCart } from "@/lib/cart";
 import { getFlightWindowStatus } from "@/lib/flight-window-state";
 import type { FlightWindowStatus, OrderStatus } from "@/types/database";
@@ -237,24 +238,40 @@ export default function OrderCard({ order }: { order: DashboardOrder }) {
         </div>
       )}
 
-      {/* ── Footer: total + reorder ─────────────────────────────────────── */}
+      {/* ── Footer: total + actions ─────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-t"
+        className="flex items-center justify-between gap-2 px-4 py-3 border-t flex-wrap"
         style={{ borderColor: "rgba(255,255,255,0.05)" }}
       >
         <span className="font-mono font-bold text-sunset-gold text-sm">
           {formatPrice(order.total_aud_cents)}
         </span>
 
-        {orderStatus === "delivered" && (
-          <button
-            type="button"
-            onClick={handleReorder}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-ocean-teal/10 text-ocean-teal border border-ocean-teal/25 hover:bg-ocean-teal/20 transition-colors"
-          >
-            Reorder
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Track Order — shown when shipment is in motion */}
+          {order.window &&
+            windowStatus !== null &&
+            ["packing", "shipped", "in_transit", "landed", "customs", "delivering", "delivered"].includes(
+              windowStatus,
+            ) && (
+              <Link
+                href={`/dashboard/tracking/${order.id}`}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-ocean-teal/10 text-ocean-teal border border-ocean-teal/25 hover:bg-ocean-teal/20 transition-colors"
+              >
+                Track Order
+              </Link>
+            )}
+
+          {orderStatus === "delivered" && (
+            <button
+              type="button"
+              onClick={handleReorder}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 text-text-secondary border border-white/15 hover:bg-white/10 transition-colors"
+            >
+              Reorder
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
