@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer dashboard + UI audit polish)
+Last updated: 2026-04-14 (Sessions K–N — flight window state machine + buyer dashboard + UI audit + supplier portal scaffold)
 
 ---
 
@@ -11,7 +11,7 @@ Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer
 | Phase 0 | Scaffold, Clerk auth, Supabase schema, seed | COMPLETE |
 | Phase 1a | Homepage (fish grid, map, surveys), QA infra | ~90% complete |
 | Phase 1b | Order flow, admin panel, RLS, Stripe checkout | IN PROGRESS |
-| Phase 2 | Supplier portal, driver portal, tracking | NOT STARTED |
+| Phase 2 | Supplier portal, driver portal, tracking | IN PROGRESS |
 | Phase 3 | Broadcasts, impact stories, multi-village | NOT STARTED |
 
 ---
@@ -32,7 +32,9 @@ Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer
 | `/admin/customers` | User list | LIVE |
 | `/admin/broadcasts` | SMS/WhatsApp blasts | STUB (Phase 1b) |
 | `/admin/settings` | Zones + villages | LIVE (read-only) |
-| `/supplier/*` | Supplier portal | NOT BUILT |
+| `/supplier` | Supplier dashboard — flight window + inventory confirmation | LIVE |
+| `/supplier/photos` | Catch photo upload + photo list | LIVE |
+| `/supplier/history` | Past flight windows | LIVE |
 | `/driver/*` | Driver portal | NOT BUILT |
 | `/checkout` | Checkout (auth-gated delivery form) | LIVE |
 | `/order/success` | Post-payment confirmation + 4-step timeline | LIVE |
@@ -62,7 +64,8 @@ Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer
 | GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
 | GET/PATCH `/api/admin/photos` | LIVE | Photo approve/reject |
 | GET/POST/PATCH `/api/admin/stories` | LIVE | Impact stories CRUD |
-| GET `/api/supplier/*` | NOT BUILT | Supplier endpoints |
+| PATCH `/api/supplier/inventory` | LIVE | Update kg + confirm_by_supplier; village-scoped |
+| POST `/api/supplier/photos` | LIVE | Upload to catch-photos bucket + insert catch_photos row |
 
 ---
 
@@ -98,6 +101,13 @@ Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer
 |-----------|-------------|
 | `dashboard/DashboardNav.tsx` | Desktop sidebar + mobile bottom tab bar; active state via `usePathname()` |
 | `dashboard/OrderCard.tsx` | Order card — dual status badges (order + window), items, delivery info, flight, Reorder button |
+
+### Supplier components (Phase 2)
+| Component | Description |
+|-----------|-------------|
+| `supplier/SupplierNav.tsx` | Fixed bottom 3-tab nav (Dashboard / Photos / History); active state via usePathname() |
+| `supplier/InventoryManager.tsx` | Editable kg per species, Confirm Catch + Save kg buttons; PATCH /api/supplier/inventory |
+| `supplier/PhotoUploadForm.tsx` | Camera capture, canvas JPEG compression (max 1MB), POST to /api/supplier/photos, router.refresh() on success |
 
 ### Admin components
 | Component | Description |

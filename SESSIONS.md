@@ -38,6 +38,51 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session N — 2026-04-14 — Phase 2: Supplier portal scaffold
+
+### Goal
+Build the supplier portal scaffold — the cousin in Galoa logs in, confirms their catch, uploads photos, and reviews their history. Light theme, mobile-first, Android-optimised.
+
+### What we built
+- `src/app/supplier/layout.tsx` — light-theme shell; sticky top nav (FijiFish | village name | Sign out); `SupplierNav` bottom tabs; role gate (access denied for non-supplier/non-admin); fetches village name from Supabase using session `village_id`
+- `src/app/supplier/page.tsx` — Catch Dashboard; active/upcoming flight window card with status badge and FJT close time; `InventoryManager` for kg editing and catch confirmation; village-not-assigned warning
+- `src/app/supplier/photos/page.tsx` — Catch Photos page; `PhotoUploadForm` for upload; server-rendered list of photos for this window with status badges (Pending / Approved / Rejected)
+- `src/app/supplier/history/page.tsx` — Past flight windows; grouped by window date; kg supplied vs sold per species; newest first
+- `src/components/supplier/SupplierNav.tsx` — fixed bottom 3-tab nav; 56px tap targets; active state via `usePathname()`; tabs: Dashboard, Photos, History
+- `src/components/supplier/InventoryManager.tsx` — client component; editable kg inputs per species; "Confirm Catch for [date]" button (saves kg + sets `confirmed_by_supplier=true + confirmed_at`); "Save kg only" secondary button; confirmed status badge
+- `src/components/supplier/PhotoUploadForm.tsx` — client component; `capture="environment"` for direct camera; canvas JPEG compression (max 1200px, 0.82 quality, max 1MB); preview with remove; POST to `/api/supplier/photos`; `router.refresh()` on success re-renders photo list
+- `src/app/api/supplier/inventory/route.ts` — `PATCH`; updates `total_capacity_kg` and optionally `confirmed_by_supplier`/`confirmed_at`; village-scoped security proxy (explicit `WHERE village_id = ?`)
+- `src/app/api/supplier/photos/route.ts` — `POST`; resolves `supplier.id` via `users.clerk_id → suppliers.user_id`; uploads to `catch-photos` Supabase Storage bucket; inserts `catch_photos` row; server-side 1MB guard
+- `src/types/database.ts` — added `Supplier` interface; added `CatchPhoto` interface; added `confirmed_by_supplier` + `confirmed_at` to `InventoryAvailability`
+
+### Architecture decisions
+- **Light theme, no WorldView classes** — `bg-white`/`bg-gray-50`/`text-gray-900`/`text-cyan-600` throughout; dark theme CSS vars (`bg-bg-primary`, `text-text-primary`) are intentionally absent from all supplier pages
+- **No framer-motion** — supplier is on low-bandwidth Android in Fiji; plain CSS `transition-transform` only
+- **No new migration needed** — `catch_photos` table already in migration 001 (line 277), `confirmed_by_supplier`/`confirmed_at` already in `inventory_availability` (lines 195–196); types just weren't in `database.ts`
+- **`router.refresh()` pattern for photo list** — `PhotoUploadForm` is a client component; after upload it calls `router.refresh()` which re-runs the server component page and refreshes the photo list without a full navigation
+- **Supplier record lookup in photo API** — `catch_photos.supplier_id` is a FK to `suppliers.id` (not `users.id`); API resolves: `clerk_id → users.id → suppliers.id → village_id`
+- **`as unknown as InvRow[]` cast** — Supabase infers embedded relations as arrays; TypeScript rejects direct cast; casting through `unknown` is the correct pattern when the runtime shape is known to be correct
+- **Village-scoped security proxy** — RLS not yet set up; all supplier writes include explicit `WHERE village_id = ?` from session claims to prevent cross-village data access
+
+### TODOs left in code
+- [ ] `src/app/api/supplier/inventory/route.ts` — no RLS; relies on service role + explicit WHERE. Add RLS in Phase 2 hardening
+- [ ] `src/app/api/supplier/photos/route.ts` — no RLS on storage; service role upload bypasses bucket policies. Add storage RLS in Phase 2 hardening
+- [ ] `src/components/supplier/InventoryManager.tsx` — no optimistic update on kg save; page does not re-render after "Save kg only" (only after full page refresh). Add `router.refresh()` on save success in future polish
+- [ ] Admin photo approval UI not yet built — `catch_photos` rows are created with `status='pending'` but no admin UI exists to approve/reject yet
+
+### Parking lot (deferred — do not build yet)
+- [ ] Supplier analytics — revenue earned per window, total kg shipped, species breakdown charts
+- [ ] Push notifications to supplier when orders start coming in for their catch
+- [ ] Bulk species assignment — admin UI to add all species to a new window's inventory in one click
+- [ ] Supplier profile page — contact info, bank account for payment, certification uploads
+
+### Next session
+First task: Build the admin catch photo approval UI (`/admin/photos` already routes to a page stub — build the photo queue: list pending `catch_photos`, approve/reject buttons, updates `status` + `approved_by` + `approved_at`)
+File to open: `src/app/admin/photos/page.tsx` (check if stub exists) and `src/app/api/admin/photos/route.ts`
+Context needed: Admin photo approval is the next step in the supplier → admin → buyer photo flow. The `catch_photos` table is in migration 001 with `status` CHECK ('pending','approved','rejected'), `approved_by` (UUID → users.id), `approved_at` (timestamptz). The supplier just built the upload side; admin needs to review and approve.
+
+---
+
 ## Session M — 2026-04-14 — UI audit polish pass
 
 ### Goal
