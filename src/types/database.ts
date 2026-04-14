@@ -159,6 +159,33 @@ export interface Customer {
   created_at: string;
 }
 
+export type BroadcastChannel = "sms" | "whatsapp" | "both";
+export type BroadcastStatus = "draft" | "sending" | "sent" | "failed";
+export type BroadcastDeliveryStatus = "queued" | "sent" | "delivered" | "failed" | "unsubscribed";
+
+export interface Broadcast {
+  id: string;
+  sent_by: string | null;
+  audience_filter: Record<string, unknown>;
+  channels: BroadcastChannel;
+  message_text: string;
+  recipient_count: number;
+  estimated_cost_aud_cents: number;
+  sent_at: string | null;
+  status: BroadcastStatus;
+  created_at: string;
+}
+
+export interface BroadcastRecipient {
+  id: string;
+  broadcast_id: string;
+  customer_id: string;
+  channel_used: "sms" | "whatsapp";
+  delivery_status: BroadcastDeliveryStatus;
+  sent_at: string | null;
+  created_at: string;
+}
+
 export type OrderStatus =
   | "pending"
   | "confirmed"
