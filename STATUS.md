@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions H–I + config milestones)
+Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 
 ---
 
@@ -53,7 +53,7 @@ Last updated: 2026-04-14 (Sessions H–I + config milestones)
 | POST `/api/feedback` | LIVE | 5-star feedback form |
 | POST `/api/delivery-demand/vote` | LIVE | Delivery zone demand poll |
 | POST `/api/checkout` | LIVE | Cart → Stripe checkout session |
-| POST `/api/webhooks/clerk` | NOT BUILT | User sync to Supabase |
+| POST `/api/webhooks/clerk` | LIVE | user.created/updated/deleted → Supabase users + customers sync; svix sig verification |
 | POST `/api/webhooks/stripe` | LIVE | checkout.session.completed + payment_failed + charge.refunded; capacity management |
 | GET/POST/PATCH `/api/admin/windows` | LIVE | Flight window CRUD |
 | GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
@@ -116,9 +116,9 @@ Last updated: 2026-04-14 (Sessions H–I + config milestones)
 | `fish_species` | 001 | `unlock_status` + `unlock_votes_target` columns added; Walu=available, 7 others=locked |
 | `flight_windows` | 001 | FJ911 seeded (2026-04-17, status=open) |
 | `delivery_zones` | 001 | Riverina zones |
-| `customers` | 001 | Clerk user sync target (webhook not yet built) |
-| `orders` | 001 | Not yet used |
-| `order_items` | 001 | Not yet used |
+| `customers` | 001 | Populated by Clerk webhook (user.created) |
+| `orders` | 001 | Populated at checkout; confirmed by Stripe webhook |
+| `order_items` | 001 | Populated at checkout |
 | `inventory_availability` | 001 | LIVE — 8 rows seeded for FJ911 window |
 | `fish_interest_votes` | 002 | Live |
 | `fish_interest_summary` | 002 | View — live |
@@ -133,6 +133,8 @@ Last updated: 2026-04-14 (Sessions H–I + config milestones)
 **Note: migration 006 was skipped.**
 
 **Migration 011 applied:** `delivery_address` and `delivery_notes` columns added to `orders` table. Checkout route now persists delivery address correctly.
+
+**Migration 012 applied:** `users.is_active` (boolean, default true) + `users.deleted_at` (timestamptz) added for soft-delete support. Clerk webhook sets `is_active=false` + `deleted_at` on `user.deleted` instead of hard-deleting (which would cascade and destroy order history).
 
 ---
 

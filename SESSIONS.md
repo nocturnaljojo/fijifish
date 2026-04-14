@@ -38,6 +38,47 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session J — 2026-04-14 — Clerk webhook handler
+
+### What was built
+- `src/app/api/webhooks/clerk/route.ts` — full user lifecycle sync from Clerk to Supabase
+  - `user.created` → upsert `users` (role: buyer) + upsert `customers` (bare row, delivery info added at checkout) + log to `notification_log`
+  - `user.updated` → sync `full_name`, `email`, `phone` to `users` row
+  - `user.deleted` → soft delete: `is_active=false`, `deleted_at=now()`. Hard delete forbidden — cascade would destroy order history
+  - All other events → 200, no action
+- `supabase/migrations/012_users_soft_delete.sql` — adds `is_active boolean default true` + `deleted_at timestamptz` to `users`; index on `is_active`
+- Migration 012 applied to Supabase via MCP
+- `svix` installed (`^1.90.0`) for Clerk webhook signature verification
+- Both upserts idempotent: `users` on `clerk_id`, `customers` on `user_id`
+- Notification log errors swallowed — must never block user creation
+
+### Manual config completed
+- Clerk Dashboard → Webhooks → Add Endpoint: `https://vitifish.vercel.app/api/webhooks/clerk`
+- Events registered: `user.created`, `user.updated`, `user.deleted`
+- `CLERK_WEBHOOK_SECRET` added to Vercel env vars + `.env.local`
+
+### NOT YET TESTED
+- Live end-to-end signup through Clerk → webhook fires → Supabase row created. Needs manual verification: sign up a test user, check `users` + `customers` tables in Supabase.
+
+### Full day summary (Sessions H, I, J — 2026-04-14)
+- Stripe webhook handler live (order lifecycle: confirmed, payment_failed, refunded + capacity restoration)
+- Migrations 010, 011, 012 applied
+- Stripe CLI installed locally; production webhook endpoint configured
+- Clerk session token customised; admin role set on primary user
+- All Vercel env vars confirmed (Stripe, Supabase, Clerk, Mapbox, Twilio)
+- Clerk webhook handler live (user sync)
+- End-to-end checkout verified locally with Stripe CLI
+- All known issues (#3, #4, #5, #6) closed
+
+### Next session
+1. Manual test: sign up a new Clerk user → verify row in Supabase `users` + `customers`
+2. Enable PayTo in Stripe Dashboard (lower fees for AU bank-to-bank payments)
+3. Create `stripe-patterns-fijifish.md` — project-specific Stripe reference doc
+4. Supplier portal scaffolding (Phase 2)
+5. UI audit fixes from `UI-AUDIT.md` (section reorder, quantity selector UX, countdown format, mobile DeliveryBanner)
+
+---
+
 ## Session I — 2026-04-14 — End-to-end checkout verified; infrastructure fully live
 
 ### Goal
