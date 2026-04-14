@@ -107,6 +107,7 @@ export type OrderStatus =
   | "pending"
   | "confirmed"
   | "paid"
+  | "payment_failed"
   | "out_for_delivery"
   | "delivered"
   | "cancelled"
