@@ -38,6 +38,49 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session R — 2026-04-15 — Phase 3: Driver portal
+
+### Goal
+Build the complete driver portal: delivery run management, per-stop proof capture with camera + GPS, GPS polling, run history, and admin active deliveries view.
+
+### What we built
+- `src/types/database.ts` — added `Driver`, `DeliveryRun`, `DeliveryStop`, `DeliveryProof`, `DriverGpsLog` interfaces
+- `src/components/driver/DriverNav.tsx` — 3-tab bottom nav (Today's Run / Deliveries / History); active state via `usePathname()`; 56px tap targets
+- `src/app/driver/layout.tsx` — dark theme shell, `isDriver()` auth gate (redirects non-drivers to `/sign-in`)
+- `src/app/driver/page.tsx` — server component: resolves clerk_id → users → drivers → delivery_runs; fetches stops with nested order + customer data; passes to RunManager
+- `src/app/driver/RunManager.tsx` — client component: Start Run button (planned → active), stop cards with Mark Arrived / Deliver+Photo / Skip actions, Complete Run when all stops done; GPS polling via `setInterval` every 60s while run is active (logs to `/api/driver/gps`); Maps link per stop
+- `src/app/driver/deliver/[stopId]/page.tsx` — server component: fetches stop data, normalises Supabase array relations to single objects
+- `src/app/driver/deliver/[stopId]/DeliveryProofForm.tsx` — client component: rear-camera photo capture (`capture="environment"`), canvas compression (1200px / JPEG 0.82), GPS auto-capture on photo, received_by_name field, proxy delivery checkbox, submits to `/api/driver/proof` then PATCH `/api/driver` mark_delivered, redirects to `/driver`
+- `src/app/driver/history/page.tsx` — past completed runs, collapsible `<details>` per run with stop detail + proof photo links
+- `src/app/api/driver/route.ts` — GET: resolves driver, fetches active/planned run + stops; PATCH: start_run / complete_run / mark_arrived / mark_delivered (updates order status too) / skip_stop
+- `src/app/api/driver/proof/route.ts` — POST: uploads JPEG to `delivery-proofs` bucket, inserts `delivery_proofs` row with GPS + metadata
+- `src/app/api/driver/gps/route.ts` — POST: inserts `driver_gps_logs` row
+- `src/app/admin/page.tsx` — added Active Deliveries section: live runs with driver name, progress bar, current stop address
+
+### Architecture decisions
+- **clerk_id → users.id → drivers.id chain** — `delivery_runs.driver_id` references `drivers.id` not `users.id`; two-step resolution required before querying runs
+- **Supabase join normalisation in page** — Supabase TypeScript inference returns FK joins as arrays; page component normalises to single objects before passing to client components to keep component interfaces clean
+- **mark_delivered also updates orders.status** — stop delivered → order status set to "delivered" + delivered_at in same PATCH call; keeps buyer dashboard in sync without a separate step
+- **GPS polling in useEffect cleanup** — setInterval cleaned up on unmount; GPS failures are silent (graceful denial)
+- **Proxy delivery flags admin_approval_required** — is_proxy_delivery=true sets admin_approval_required=true on the proof row; admin review flow deferred
+
+### TODOs left in code
+- [ ] Driver portal only shows runs if they exist in DB — no admin UI to assign/create runs yet; runs must be inserted manually or via a future admin run-assignment page
+- [ ] `delivery-proofs` bucket is marked private in migration 005 but `getPublicUrl()` is used in proof route — may need signed URL for private bucket access in production
+
+### Parking lot (deferred)
+- [ ] Admin run assignment UI — create delivery_runs, assign driver, sequence stops
+- [ ] Route optimisation — `src/lib/route-optimiser.ts` not built
+- [ ] Communal delivery detection — schema has `is_communal` + `communal_group_id` but logic not implemented
+- [ ] Driver escalation flow — `escalated` stop status has no action in UI yet
+
+### Next session
+First task: Build admin run assignment UI — create `delivery_runs`, sequence stops from paid orders for a flight window, assign to a driver
+File to open: `src/app/admin/page.tsx` and `src/app/admin/windows/page.tsx`
+Context needed: Admin needs to be able to create a delivery run for a flight window, auto-populate stops from paid orders for that window, and assign a driver. Schema already supports this (`delivery_runs`, `delivery_stops`). No route optimiser yet — just manual sequence.
+
+---
+
 ## Session Q — 2026-04-14 — Phase 2: Broadcast system
 
 ### Goal

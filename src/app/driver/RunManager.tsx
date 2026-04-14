@@ -189,7 +189,6 @@ export default function RunManager({
           const order = stop.orders;
           const items = order?.order_items ?? [];
           const isDone = stop.status === "delivered" || stop.status === "skipped";
-          const loadingKey = loading?.slice(-stop.id.length);
           const isThisLoading = loading?.endsWith(stop.id);
 
           return (

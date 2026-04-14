@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–Q — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard + shipment tracking + broadcasts)
+Last updated: 2026-04-15 (Session R — driver portal: delivery runs, proof capture, GPS logging, history, admin active deliveries)
 
 ---
 
@@ -38,7 +38,9 @@ Last updated: 2026-04-14 (Sessions K–Q — flight window state machine + buyer
 | `/supplier/photos` | Catch photo upload + photo list | LIVE |
 | `/supplier/tracking` | Post caught/processing/packed/at_airport updates with photos | LIVE |
 | `/supplier/history` | Past flight windows | LIVE |
-| `/driver/*` | Driver portal | NOT BUILT |
+| `/driver` | Driver portal — today's run, start/stop controls, per-stop actions | LIVE |
+| `/driver/deliver/[stopId]` | Delivery proof capture — camera, GPS, received-by, proxy flag | LIVE |
+| `/driver/history` | Past completed runs, expandable stop detail + proof photos | LIVE |
 | `/checkout` | Checkout (auth-gated delivery form) | LIVE |
 | `/order/success` | Post-payment confirmation + 4-step timeline | LIVE |
 | `/supply-chain` | Supply chain story (stub) | LIVE |
@@ -63,6 +65,10 @@ Last updated: 2026-04-14 (Sessions K–Q — flight window state machine + buyer
 | POST `/api/checkout` | LIVE | Cart → Stripe checkout session |
 | POST `/api/webhooks/clerk` | LIVE | user.created/updated/deleted → Supabase users + customers sync; svix sig verification |
 | POST `/api/webhooks/stripe` | LIVE | checkout.session.completed + payment_failed + charge.refunded; capacity management |
+| GET `/api/driver` | LIVE | Active/planned run + stops + order items for current driver |
+| PATCH `/api/driver` | LIVE | start_run / complete_run / mark_arrived / mark_delivered / skip_stop |
+| POST `/api/driver/proof` | LIVE | Upload proof photo to delivery-proofs bucket + insert delivery_proofs row |
+| POST `/api/driver/gps` | LIVE | Insert driver_gps_logs row |
 | GET/POST/PATCH `/api/admin/windows` | LIVE | Flight window CRUD |
 | GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
 | GET/PATCH `/api/admin/photos` | LIVE | Photo approve/reject |
@@ -108,6 +114,13 @@ Last updated: 2026-04-14 (Sessions K–Q — flight window state machine + buyer
 |-----------|-------------|
 | `dashboard/DashboardNav.tsx` | Desktop sidebar + mobile bottom tab bar; active state via `usePathname()` |
 | `dashboard/OrderCard.tsx` | Order card — dual status badges (order + window), items, delivery info, flight, Reorder button |
+
+### Driver components (Phase 3)
+| Component | Description |
+|-----------|-------------|
+| `driver/DriverNav.tsx` | Fixed bottom 3-tab nav (Today's Run / Deliveries / History); active state via usePathname() |
+| `driver/RunManager.tsx` | Start Run, per-stop actions (Mark Arrived / Deliver+Photo / Skip), Complete Run; GPS polling every 60s |
+| `driver/DeliveryProofForm.tsx` | Camera capture (rear-facing), canvas compression 1200px/0.82, GPS auto-capture, received_by_name, proxy flag |
 
 ### Supplier components (Phase 2)
 | Component | Description |
@@ -230,6 +243,15 @@ To fix: Stripe Dashboard → Settings → Billing → Customer portal → copy U
 `/dashboard` queries use service role with explicit `WHERE customer_id = ?` as a security proxy.
 Proper RLS policies (`buyer can only read their own orders`) should be added in Phase 1b.
 Risk: low (service role is server-only, never exposed client-side), but must be done before Phase 2.
+
+**#9 — delivery-proofs bucket is private but proof route uses getPublicUrl()**
+Migration 005 created the `delivery-proofs` bucket as **private** (5MB, no public access). The proof API route calls `supabase.storage.from("delivery-proofs").getPublicUrl(filename)` which returns a URL but it will return 400 for unauthenticated requests on a private bucket.
+To fix: either (a) change the bucket to public in Supabase Dashboard → Storage → delivery-proofs → Make Public, or (b) switch to `createSignedUrl()` for time-limited access. Decision: make public if proof photos are only admin-accessible anyway, or use signed URLs for privacy.
+Risk: low (no buyers see these photos yet), but proof photo URLs stored in DB will 404 for anyone.
+
+**#10 — No admin UI to create delivery runs**
+`delivery_runs` and `delivery_stops` exist in the schema and the driver portal reads them, but there is no admin page to create runs or assign drivers. Runs must be manually inserted via Supabase SQL Editor.
+To fix: Build admin run assignment page — create run for a flight window, auto-populate stops from paid orders, assign driver.
 
 **Resolved:**
 - #3 — Clerk session token: `{ "metadata": "{{user.public_metadata}}" }` set in Clerk Dashboard (2026-04-14)
