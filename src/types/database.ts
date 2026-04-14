@@ -67,11 +67,14 @@ export interface FlightWindow {
   id: string;
   flight_date: string;
   flight_number: string | null;
+  labasa_departure_time: string | null;
+  nadi_departure_time: string | null;
+  canberra_arrival_time: string | null;
   order_open_at: string;
   order_close_at: string;
-  estimated_delivery_at: string | null;
   status: FlightWindowStatus;
-  is_active: boolean;
+  status_updated_at: string;
+  notes: string | null;
   created_at: string;
 }
 

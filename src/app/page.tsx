@@ -8,7 +8,6 @@ import {
   getActiveFlightWindow,
   getWindowInventory,
   calcCargoPercent,
-  formatFlightDate,
   type InventoryRow,
 } from "@/lib/flight-windows";
 import { FLIGHT_CONFIG, CARGO_CONFIG } from "@/lib/config";
@@ -235,10 +234,6 @@ export default async function Home() {
   const cargoPercent =
     calcCargoPercent(dbInventory) ?? CARGO_CONFIG.capacityPercent;
 
-  const nextDeliveryLabel = activeWindow
-    ? formatFlightDate(activeWindow.flight_date)
-    : FLIGHT_CONFIG.nextDeliveryLabel;
-
   // Available fish for celebration toast (compare against user's localStorage votes)
   const availableFishForCelebration = availableFish.map((f) => ({
     id: f.id,
@@ -248,11 +243,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <DeliveryBanner
-        orderCloseAt={orderCloseAt}
-        cargoPercent={cargoPercent}
-        nextDeliveryLabel={nextDeliveryLabel}
-      />
+      <DeliveryBanner />
       <Navbar />
 
       <main className="flex-1">

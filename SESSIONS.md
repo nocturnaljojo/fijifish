@@ -38,6 +38,52 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session K — 2026-04-14 — Flight window state machine + dynamic banner/cards
+
+### What was built
+- `src/lib/flight-window-state.ts` — pure `getFlightWindowStatus(window, now)` function
+  - Time-driven: upcoming → open → closing_soon → closed (computed from timestamps, NEVER written to DB)
+  - Admin-driven: packing → shipped → in_transit → landed → customs → delivering → delivered / cancelled (stored in DB, returned as-is)
+  - Exports `CLOSING_SOON_HOURS = 6` constant and `isOrderingOpen(status)` helper
+- `src/lib/flight-window-actions.ts` — server actions for admin state transitions
+  - `markAsPacking`, `markAsShipped`, `markAsInTransit`, `markAsLanded`, `markAsCustomsCleared`, `markAsDelivering`, `markAsDelivered`, `cancelWindow`
+  - Each validates current effective state before transitioning (no step-skipping)
+  - Uses `requireRole(["admin"])` for authorisation
+- `src/hooks/useFlightWindow.ts` — client hook
+  - Fetches current/next relevant window from Supabase on mount
+  - Priority 1: any admin-driven active state (packing→delivering); Priority 2: next upcoming window by flight_date
+  - Recomputes every 30 s (both time-driven states and admin re-fetch)
+  - Exposes: `currentWindow`, `status`, `timeUntilClose`, `timeUntilOpen`, `isOrderingOpen`, `loading`
+- `src/components/DeliveryBanner.tsx` — rewritten as client component using hook
+  - Post-order states (packing→delivered/cancelled): simplified single-row message
+  - Time-driven states: full 3-column layout (label | cargo bar | countdown)
+  - upcoming: "Next Order Window opens [date]" + opens-in countdown
+  - open: delivery date + cargo bar + close countdown
+  - closing_soon: urgent styling + close countdown
+  - closed: "Orders Closed" indicator
+- `src/components/FishCard.tsx` — uses hook for window status
+  - "Add to Order" / "Order Now" button disabled when status not in ['open', 'closing_soon']
+  - Shows `closedButtonLabel(status, orderOpenAt)` when closed ("Orders open Thu 17 Apr", etc.)
+  - Mini countdown only shows when ordering is active
+- `src/types/database.ts` — fixed FlightWindow interface to match migration 001:
+  - Added: `status_updated_at`, `labasa_departure_time`, `nadi_departure_time`, `canberra_arrival_time`, `notes`
+  - Removed: `estimated_delivery_at` (not in migration), `is_active` (not in flight_windows migration)
+- `src/app/page.tsx` — removed DeliveryBanner props (banner is now self-contained), removed unused `formatFlightDate` import and `nextDeliveryLabel` variable
+- Migration 013 NOT needed — CHECK constraint in migration 001 already includes all 12 states
+
+### Architecture decisions
+- Time-driven states intentionally NEVER written to DB — computed at render time (deterministic)
+- notification_log skipped in actions: requires `customer_id NOT NULL` (FK to customers); bulk buyer notifications deferred to notification engine (Phase 1b/2)
+- Hook makes two prioritized queries to avoid returning a past delivered window when a new upcoming one exists
+
+### Next session
+1. Manual test: sign up a new Clerk user → verify Supabase rows
+2. Admin UI for state transitions (Phase 2)
+3. UrgencyBanner: wire to use `useFlightWindow` hook (currently hardcoded)
+4. Supplier portal scaffolding (Phase 2)
+
+---
+
 ## Session J — 2026-04-14 — Clerk webhook handler
 
 ### What was built
