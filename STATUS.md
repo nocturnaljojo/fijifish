@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
+Last updated: 2026-04-14 (Sessions K–L — flight window state machine + buyer dashboard)
 
 ---
 
@@ -41,6 +41,9 @@ Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 | `/privacy` | Privacy Policy page | LIVE |
 | `/terms` | Terms of Service page | LIVE |
 | `/account` | Buyer account — orders, history, preferences | LIVE |
+| `/dashboard` | Buyer dashboard — My Orders (active + history) | LIVE |
+| `/dashboard/account` | Account info (name, email, phone, address) | LIVE |
+| `/dashboard/billing` | Stripe Customer Portal link + payment info | LIVE |
 | `/track/[orderId]` | Shipment tracking | NOT BUILT |
 
 ---
@@ -89,6 +92,12 @@ Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 |-----------|------|-------------|
 | `GaloaMap.tsx` | `/supply-chain` | SVG/CSS animated map: zoom→marker→flight path→labels |
 | `ImpactFeed.tsx` | `/impact` | Village impact stories from Supabase |
+
+### Dashboard components (buyer portal)
+| Component | Description |
+|-----------|-------------|
+| `dashboard/DashboardNav.tsx` | Desktop sidebar + mobile bottom tab bar; active state via `usePathname()` |
+| `dashboard/OrderCard.tsx` | Order card — dual status badges (order + window), items, delivery info, flight, Reorder button |
 
 ### Admin components
 | Component | Description |
@@ -164,7 +173,10 @@ Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 | `src/proxy.ts` | LIVE | Role-based middleware |
 | `src/lib/cart.ts` | LIVE | zustand cart store with localStorage persist |
 | `src/lib/stripe.ts` | LIVE | Nullable Stripe client; soft warn if unconfigured |
-| `src/lib/order-engine.ts` | NOT BUILT | Order window state machine |
+| `src/lib/flight-window-state.ts` | LIVE | Pure `getFlightWindowStatus(window, now)` — time-driven states computed, admin-driven states from DB |
+| `src/lib/flight-window-actions.ts` | LIVE | Server actions for admin state transitions (markAsPacking → markAsDelivered, cancelWindow) |
+| `src/hooks/useFlightWindow.ts` | LIVE | Client hook — fetches current window, recomputes status every 30s |
+| `src/lib/order-engine.ts` | NOT BUILT | (was: order window state machine — superseded by flight-window-state.ts) |
 | `src/lib/route-optimiser.ts` | NOT BUILT | Delivery route optimisation |
 | `src/lib/notifications.ts` | NOT BUILT | Twilio SMS/WhatsApp dispatcher |
 | `src/lib/scarcity.ts` | NOT BUILT | Realtime capacity subscriptions |
@@ -186,7 +198,16 @@ Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 
 ## Known issues (action required)
 
-**No open blocking issues.** All infrastructure live and configured.
+**No open blocking issues.**
+
+**#7 — Pending manual config: STRIPE_PORTAL_URL not yet set**
+`/dashboard/billing` falls back to a "Contact us" email until `STRIPE_PORTAL_URL` is set in Vercel.
+To fix: Stripe Dashboard → Settings → Billing → Customer portal → copy URL → add as `STRIPE_PORTAL_URL` in Vercel env vars (server-only, no NEXT_PUBLIC_ prefix).
+
+**#8 — RLS policies missing on orders/order_items**
+`/dashboard` queries use service role with explicit `WHERE customer_id = ?` as a security proxy.
+Proper RLS policies (`buyer can only read their own orders`) should be added in Phase 1b.
+Risk: low (service role is server-only, never exposed client-side), but must be done before Phase 2.
 
 **Resolved:**
 - #3 — Clerk session token: `{ "metadata": "{{user.public_metadata}}" }` set in Clerk Dashboard (2026-04-14)
@@ -210,9 +231,14 @@ Last updated: 2026-04-14 (Sessions H–J — full order + user sync stack)
 
 ## Hardcoded values status
 
-All homepage components (`DeliveryBanner`, `UrgencyBanner`, `StickyOrderBar`, `FishCard`) now accept optional props from DB. `page.tsx` fetches live `flight_windows` + `inventory_availability` and passes through. Config values are fallbacks only.
+`DeliveryBanner` is now self-contained: fetches `flight_windows` directly via `useFlightWindow` hook, no props required. State-machine drives all messaging (upcoming / open / closing_soon / closed / packing / shipped / in_transit / …).
+
+`FishCard` uses `useFlightWindow` hook for `isOrderingOpen`; button disabled outside open/closing_soon.
+
+`UrgencyBanner` and `StickyOrderBar` still accept props from `page.tsx` (config fallback). `page.tsx` fetches live `flight_windows` + `inventory_availability`.
 
 All "A$35" price labels centralised to `PRICING_CONFIG.defaultPriceLabel` in `src/lib/config.ts`.
 
-Remaining:
+Remaining hardcoded:
+- `CARGO_CONFIG.capacityPercent` in `DeliveryBanner` — cargo % still from config until `inventory_availability` is wired to a real-time aggregator
 - `TEST_INVENTORY` in `page.tsx` — still used when a species has no `inventory_availability` row for the current window
