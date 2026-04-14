@@ -38,6 +38,44 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session O — 2026-04-14 — Admin dashboard: flight windows, orders, photo approval
+
+### Goal
+Build the admin command centre: full flight window state machine, orders overview, tab-filtered photo approval.
+
+### What we built
+- `src/components/admin/AdminSidebar.tsx` — added Orders nav link (between Flight Windows and Fish & Pricing)
+- `src/app/admin/windows/WindowForm.tsx` — `WindowRow` rewritten: full state machine via server actions (`markAsPacking` → `markAsShipped` → `markAsInTransit` → `markAsLanded` → `markAsCustomsCleared` → `markAsDelivering` → `markAsDelivered`); Cancel Window button with `window.prompt()` for reason; order count badge; time-driven transitions (upcoming/open/closing_soon) still go via raw PATCH API; error display inline
+- `src/app/admin/windows/page.tsx` — fetches order counts per window (non-cancelled only) in parallel with window list; passes `orderCount` to each `WindowRow`
+- `src/app/admin/photos/page.tsx` — rewritten with tab filter (Pending | Approved | Rejected) driven by `searchParams`; parallel fetch of counts for all tabs; badge counts on inactive tabs; tabs are `<Link>` components (zero JS)
+- `src/app/admin/photos/PhotoQueue.tsx` — accepts `tab` prop for contextual empty state messages; approve/reject buttons hidden for non-pending photos
+- `src/app/admin/orders/page.tsx` — new: all orders with status/window filter; status counts shown in filter buttons; parallel data fetch (orders + windows + counts); clean build with `dynamic = "force-dynamic"`
+- `src/app/admin/orders/OrdersTable.tsx` — new client component: click-to-expand rows; each row shows customer name/email, flight, status badge, total, placed date; expanded row shows order ID, Stripe PI, zone, delivery address/notes, fee, and full items list with per-line totals
+- `src/app/admin/orders/WindowSelect.tsx` — new micro client component: `<select>` for flight window filter; isolated to avoid making the whole orders page a client component
+
+### Decisions made
+- **Server actions for admin-driven transitions** — `flight-window-actions.ts` is `"use server"`, so `WindowRow` (client) imports and calls actions directly; Next.js handles serialisation; no API route needed for the packing→delivered chain
+- **Raw PATCH for time-driven states** — upcoming/open/closing_soon transitions still hit `/api/admin/windows` because these are borderline (time-driven states shouldn't normally be written by admin, but an override is needed in practice)
+- **`window.prompt()` for cancel reason** — avoids a modal component; admin confirms with a native prompt; returns `null` on dismiss to abort
+- **Window filter extracted to client component** — `<select onChange>` can't live in a server component; extracted to `WindowSelect.tsx` so the rest of the orders page stays server-rendered
+- **Two-query pattern for orders + items** — avoids the N+1 problem; fetch all orders, collect their IDs, fetch all items in one query, group in JS
+
+### TODOs left in code
+- [ ] `src/app/admin/orders/page.tsx` — no order update actions yet (status change, refund trigger). Planned for Phase 2 hardening
+- [ ] `src/app/admin/photos/PhotoQueue.tsx` — no "Revert to pending" action for approved/rejected photos
+
+### Parking lot (deferred)
+- [ ] Orders — bulk actions (mark all delivered, export CSV)
+- [ ] Orders — send customer notification on status change
+- [ ] Broadcasts admin page (currently stub)
+
+### Next session
+First task: `/admin` overview dashboard — make it the flight window dashboard (list + state buttons); the current `/admin` page is a stats overview — either keep it or redirect to `/admin/windows`
+File to open: `src/app/admin/page.tsx`
+Context needed: The current `/admin` page shows StatCard grid (revenue, users, orders, cargo %) and quick action links. The user may want to promote `/admin/windows` as the primary landing or update `/admin` to show live window status prominently.
+
+---
+
 ## Session N — 2026-04-14 — Phase 2: Supplier portal scaffold
 
 ### Goal

@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–N — flight window state machine + buyer dashboard + UI audit + supplier portal scaffold)
+Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard)
 
 ---
 
@@ -29,6 +29,7 @@ Last updated: 2026-04-14 (Sessions K–N — flight window state machine + buyer
 | `/admin/pricing` | Inventory price + capacity | LIVE |
 | `/admin/photos` | Catch photo approval queue | LIVE |
 | `/admin/stories` | Impact stories CRUD | LIVE |
+| `/admin/orders` | All orders, status/window filter, expandable rows | LIVE |
 | `/admin/customers` | User list | LIVE |
 | `/admin/broadcasts` | SMS/WhatsApp blasts | STUB (Phase 1b) |
 | `/admin/settings` | Zones + villages | LIVE (read-only) |
