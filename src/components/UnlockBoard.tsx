@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import AuthPromptModal from "./AuthPromptModal";
 import { recordVoteInStorage } from "./UnlockCelebration";
@@ -52,6 +52,16 @@ export default function UnlockBoard({ lockedFish, isSignedIn }: UnlockBoardProps
     () => Object.fromEntries(lockedFish.map((f) => [f.id, f.current_votes])),
   );
   const [voted, setVoted] = useState<Set<string>>(new Set());
+
+  // Restore previously-voted species from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("fijiFish_voted") ?? "[]") as string[];
+      if (stored.length > 0) setVoted(new Set(stored));
+    } catch {
+      // ignore corrupt storage
+    }
+  }, []);
   const [loading, setLoading] = useState<string | null>(null);
   const [justUnlocked, setJustUnlocked] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);

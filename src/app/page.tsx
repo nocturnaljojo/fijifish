@@ -308,7 +308,13 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* 4 — Unlock board — community voting for locked species */}
+        {/* 4 — Reef to Table: 3-step process */}
+        <ProcessSteps />
+
+        {/* 5 — Village + community impact */}
+        <VillagePreview village={village} />
+
+        {/* 6 — Unlock board — community voting for locked species */}
         {lockedFish.length > 0 && (
           <section id="unlock" className="px-4 pb-12 sm:pb-16 scroll-mt-20">
             <div className="max-w-6xl mx-auto">
@@ -317,19 +323,13 @@ export default async function Home() {
           </section>
         )}
 
-        {/* 5 — Reef to Table: 3-step process */}
-        <ProcessSteps />
-
-        {/* 6 — Delivery zones + unlock your area (combined) */}
+        {/* 7 — Delivery zones + unlock your area (combined) */}
         <DeliveryZoneBanner />
         <section id="delivery-demand" className="px-4 py-10 sm:py-12 scroll-mt-20">
           <div className="max-w-6xl mx-auto">
             <DeliveryDemandPoll species={surveySpecies} />
           </div>
         </section>
-
-        {/* 7 — Village + community impact (combined, compact) */}
-        <VillagePreview village={village} />
       </main>
 
       <Footer />

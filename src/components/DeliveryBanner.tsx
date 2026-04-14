@@ -143,11 +143,11 @@ export default function DeliveryBanner() {
       className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md"
       style={{ background: "rgba(10,15,26,0.97)" }}
     >
-      <div className="max-w-6xl mx-auto px-4 py-3 sm:py-0">
-        <div className="flex flex-col sm:flex-row sm:items-stretch gap-0 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+      <div className="max-w-6xl mx-auto px-4 py-2 md:py-0">
+        <div className="flex flex-col md:flex-row md:items-stretch gap-0 divide-y md:divide-y-0 md:divide-x divide-white/10">
 
           {/* Left — status / delivery label */}
-          <div className="flex items-center gap-2.5 sm:py-3 py-2 sm:pr-6">
+          <div className="flex items-center gap-2.5 md:py-3 py-2 md:pr-6">
             <span className="text-lg" aria-hidden="true">
               {status === "upcoming" ? "🗓️" : status === "closed" ? "🔒" : "✈️"}
             </span>
@@ -163,7 +163,7 @@ export default function DeliveryBanner() {
 
           {/* Centre — cargo bar (only relevant when open or closing_soon) */}
           {(status === "open" || status === "closing_soon") && (
-            <div className="hidden sm:flex items-center gap-3 sm:py-3 sm:px-6 flex-1">
+            <div className="hidden md:flex items-center gap-3 md:py-3 md:px-6 flex-1">
               <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-text-secondary whitespace-nowrap">
                 Flight Cargo
               </span>
@@ -186,7 +186,7 @@ export default function DeliveryBanner() {
           )}
 
           {/* Right — countdown */}
-          <div className="flex items-center gap-2.5 sm:py-3 sm:pl-6 py-2">
+          <div className="flex items-center gap-2.5 md:py-3 md:pl-6 py-2">
             {status === "closed" ? (
               <>
                 <span
@@ -229,7 +229,7 @@ export default function DeliveryBanner() {
 
         {/* Mobile: cargo bar */}
         {(status === "open" || status === "closing_soon") && (
-          <div className="sm:hidden pb-2.5 flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
+          <div className="md:hidden pb-2 flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
             <span className="text-text-secondary shrink-0">Cargo</span>
             <div
               className="flex-1 h-2.5 rounded-full overflow-hidden"

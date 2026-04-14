@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CapacityBar from "./CapacityBar";
 import CountdownTimer from "./CountdownTimer";
 import { FLIGHT_CONFIG, THRESHOLDS } from "@/lib/config";
+import { detectCountryFromLocale } from "@/lib/pricing";
 import { useCart } from "@/lib/cart";
 import { useFlightWindow } from "@/hooks/useFlightWindow";
 import type { FlightWindowStatus } from "@/types/database";
@@ -64,7 +65,14 @@ function HeroFishCard({
   const canOrder = (windowStatus === "open" || windowStatus === "closing_soon") && !isSoldOut;
   const { addItem, openCart, items } = useCart();
   const [justAdded, setJustAdded] = useState(false);
+  const [isNonAU, setIsNonAU] = useState(false);
   const inCart = items.some((i) => i.fishSpeciesId === fish.id);
+
+  useEffect(() => {
+    const cc = detectCountryFromLocale(navigator?.language ?? null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (cc !== null && cc !== "AU") setIsNonAU(true);
+  }, []);
 
   function handleAddToCart() {
     addItem({
@@ -194,34 +202,46 @@ function HeroFishCard({
           </p>
 
           <div className="mt-auto space-y-2">
-            <button
-              type="button"
-              disabled={!canOrder}
-              onClick={canOrder ? handleAddToCart : undefined}
-              className={`w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] transition-all ${
-                !canOrder
-                  ? "bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
-                  : justAdded
-                  ? "bg-lagoon-green text-bg-primary"
-                  : inCart
-                  ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
-                  : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
-              }`}
-            >
-              {!canOrder
-                ? isSoldOut
-                  ? "Sold Out"
-                  : closedButtonLabel(windowStatus, orderOpenAt)
-                : justAdded
-                ? "✅ Added to cart!"
-                : inCart
-                ? "In Cart — Add Another kg"
-                : `Secure Your Order — ${formatPrice(fish.price_aud_cents)}/kg`}
-            </button>
-            {canOrder && (
-              <p className="text-xs text-text-secondary text-center font-mono">
-                🛩️ Limited cargo space · ⏰ Catch window closing soon
-              </p>
+            {isNonAU ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
+              >
+                Available in Australia only
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={!canOrder}
+                  onClick={canOrder ? handleAddToCart : undefined}
+                  className={`w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] transition-all ${
+                    !canOrder
+                      ? "bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
+                      : justAdded
+                      ? "bg-lagoon-green text-bg-primary"
+                      : inCart
+                      ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
+                      : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
+                  }`}
+                >
+                  {!canOrder
+                    ? isSoldOut
+                      ? "Sold Out"
+                      : closedButtonLabel(windowStatus, orderOpenAt)
+                    : justAdded
+                    ? "✅ Added to cart!"
+                    : inCart
+                    ? "In Cart — Add Another kg"
+                    : `Secure Your Order — ${formatPrice(fish.price_aud_cents)}/kg`}
+                </button>
+                {canOrder && (
+                  <p className="text-xs text-text-secondary text-center font-mono">
+                    🛩️ Limited cargo space · ⏰ Catch window closing soon
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -249,6 +269,13 @@ export default function FishCard({
   const { addItem, openCart, items } = useCart();
   const { status: windowStatus, currentWindow } = useFlightWindow();
   const [justAdded, setJustAdded] = useState(false);
+  const [isNonAU, setIsNonAU] = useState(false);
+
+  useEffect(() => {
+    const cc = detectCountryFromLocale(navigator?.language ?? null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (cc !== null && cc !== "AU") setIsNonAU(true);
+  }, []);
 
   const isSoldOut = fish.available_kg <= 0;
   const canOrder = (windowStatus === "open" || windowStatus === "closing_soon") && !isSoldOut;
@@ -379,7 +406,15 @@ export default function FishCard({
         )}
 
         <div className="mt-auto pt-1">
-          {isSoldOut ? (
+          {isNonAU ? (
+            <button
+              type="button"
+              disabled
+              className="w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] bg-bg-tertiary text-text-secondary cursor-not-allowed border border-border-default"
+            >
+              Available in Australia only
+            </button>
+          ) : isSoldOut ? (
             <div className="space-y-2">
               <button
                 type="button"

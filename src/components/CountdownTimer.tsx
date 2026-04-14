@@ -61,6 +61,25 @@ export default function CountdownTimer({
 
   const criticalClass = urgentColor ?? "text-sunset-gold";
 
+  // >24h: "Xd Xh" — no seconds needed, too far away
+  if (timeLeft.totalSeconds > 86400) {
+    return (
+      <span className={`font-mono tabular-nums ${baseColor ?? "text-ocean-teal"} ${className}`}>
+        {timeLeft.days}d {pad(timeLeft.hours)}h
+      </span>
+    );
+  }
+
+  // <1h: "Xm Xs" in reef-coral + pulse — final countdown urgency
+  if (timeLeft.totalSeconds <= 3600) {
+    return (
+      <span className={`font-mono tabular-nums text-reef-coral animate-pulse ${className}`}>
+        {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
+      </span>
+    );
+  }
+
+  // 1h–24h: "Xh Xm Xs"
   return (
     <span
       className={`font-mono tabular-nums ${
@@ -69,7 +88,6 @@ export default function CountdownTimer({
           : (baseColor ?? "text-ocean-teal")
       } ${className}`}
     >
-      {timeLeft.days > 0 && <>{timeLeft.days}d </>}
       {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m{" "}
       <span className="text-text-primary">{pad(timeLeft.seconds)}s</span>
     </span>
