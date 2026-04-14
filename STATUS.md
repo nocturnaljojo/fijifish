@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–P — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard + shipment tracking)
+Last updated: 2026-04-14 (Sessions K–Q — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard + shipment tracking + broadcasts)
 
 ---
 
@@ -32,7 +32,7 @@ Last updated: 2026-04-14 (Sessions K–P — flight window state machine + buyer
 | `/admin/orders` | All orders, status/window filter, expandable rows | LIVE |
 | `/admin/tracking` | Shipment timeline per active window + Add Update form | LIVE |
 | `/admin/customers` | User list | LIVE |
-| `/admin/broadcasts` | SMS/WhatsApp blasts | STUB (Phase 1b) |
+| `/admin/broadcasts` | Compose + history; audience targeting; Spam Act compliant | LIVE (Twilio not connected) |
 | `/admin/settings` | Zones + villages | LIVE (read-only) |
 | `/supplier` | Supplier dashboard — flight window + inventory confirmation | LIVE |
 | `/supplier/photos` | Catch photo upload + photo list | LIVE |
@@ -70,6 +70,9 @@ Last updated: 2026-04-14 (Sessions K–P — flight window state machine + buyer
 | PATCH `/api/supplier/inventory` | LIVE | Update kg + confirm_by_supplier; village-scoped |
 | POST `/api/supplier/photos` | LIVE | Upload to catch-photos bucket + insert catch_photos row |
 | POST `/api/tracking` | LIVE | Role-gated shipment update; photo upload to shipment-updates bucket |
+| GET `/api/broadcasts` | LIVE | List all broadcasts; or preview recipient count (?preview=1&segment=...) |
+| POST `/api/broadcasts` | LIVE | Create + log broadcast; Spam Act STOP enforcement; Twilio TODO |
+| GET `/api/broadcasts/[id]` | LIVE | Broadcast detail + recipient list with delivery status |
 
 ---
 
@@ -156,6 +159,8 @@ Last updated: 2026-04-14 (Sessions K–P — flight window state machine + buyer
 **Note: migration 006 was skipped.**
 
 **Migration 011 applied:** `delivery_address` and `delivery_notes` columns added to `orders` table. Checkout route now persists delivery address correctly.
+
+**Migration 014 created:** `sms_opt_out` and `whatsapp_opt_out` boolean columns on `customers`. **MANUAL APPLY REQUIRED** in Supabase SQL Editor. Without it, channel-specific opt-outs won't work (broadcast_opt_out master flag still enforced).
 
 **Migration 013 created:** `shipment-updates` storage bucket SQL (public, 2MB, JPEG/PNG/WebP). **MANUAL TASK REQUIRED:** Apply migration 013 in Supabase Dashboard → SQL Editor (Storage bucket INSERT is not auto-applied).
 

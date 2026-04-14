@@ -38,6 +38,42 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session Q — 2026-04-14 — Phase 2: Broadcast system
+
+### Goal
+Build the admin broadcast system — compose UI, audience targeting, Spam Act compliance, database logging. Twilio integration deferred.
+
+### What we built
+- `supabase/migrations/014_customers_channel_optout.sql` — adds `sms_opt_out` (bool, default false) and `whatsapp_opt_out` (bool, default false) to customers. **MANUAL APPLY REQUIRED**
+- `src/types/database.ts` — added `BroadcastChannel`, `BroadcastStatus`, `BroadcastDeliveryStatus` union types + `Broadcast` and `BroadcastRecipient` interfaces
+- `src/app/api/broadcasts/route.ts` — dual-mode GET (list or preview count) + POST (create broadcast); `ensureStopInstruction()` appends Spam Act STOP text if absent; `buildRecipientList()` filters by segment/state/zone/active_only and both `broadcast_opt_out` (master) and channel-specific `sms_opt_out`/`whatsapp_opt_out`; inserts broadcast + broadcast_recipients; marks sent immediately (Twilio TODO comment in code)
+- `src/app/api/broadcasts/[id]/route.ts` — GET: broadcast row + full recipient list with delivery status
+- `src/app/admin/broadcasts/BroadcastCompose.tsx` — client component: 4 message templates (loads into textarea), character counter (160 limit for SMS, warns at 85%), channel radio (SMS/WhatsApp/Both), audience segment radio (all/state/zone) + state/zone sub-selects + active_only checkbox, live preview count (debounced 400ms GET), inline confirmation panel ("Send to X recipients?"), Spam Act compliance notice, success/error states
+- `src/app/admin/broadcasts/page.tsx` — replaced stub; server component fetches delivery zones + states + broadcast history in parallel; passes zone/state lists to BroadcastCompose; renders history below form
+
+### Architecture decisions
+- **Preview count via GET /api/broadcasts?preview=1** — reuses the same `buildRecipientList()` logic without inserting; debounced 400ms in client so doesn't hammer on every keystroke
+- **`broadcast_opt_out` is the master kill-switch** — always excluded regardless of channel; `sms_opt_out`/`whatsapp_opt_out` are channel-specific layered on top
+- **Recipient requires a phone number** — `buildRecipientList()` filters to only customers where `users.phone IS NOT NULL`; no phone = no delivery
+- **Twilio deferred, DB logging is complete** — all broadcast + recipient rows are inserted with delivery_status='sent' immediately; when Twilio is added, replace the TODO block with actual API calls and update delivery_status per message
+- **Spam Act STOP enforced server-side** — `ensureStopInstruction()` checks for "reply stop" case-insensitively; client shows a notice but cannot bypass the server enforcement
+
+### TODOs left in code
+- [ ] `src/app/api/broadcasts/route.ts:113` — `// TODO: integrate Twilio SMS/WhatsApp sending here`
+- [ ] `supabase/migrations/014_customers_channel_optout.sql` — MANUAL APPLY REQUIRED in Supabase SQL Editor
+- [ ] No unsubscribe handling yet — when customer replies STOP, Twilio webhook should set `sms_opt_out=true` or `whatsapp_opt_out=true` on the customer record
+
+### Parking lot (deferred)
+- [ ] Twilio webhook for STOP replies → auto-set opt-out column
+- [ ] Scheduled broadcasts (send at a future time)
+- [ ] Broadcast analytics — delivery rate, open rate (WhatsApp read receipts)
+
+### Next session
+First task: Apply migrations 013 and 014 manually in Supabase SQL Editor
+Context needed: Both migrations are SQL files in supabase/migrations/. Paste into Supabase Dashboard → SQL Editor and run. Migration 013 creates the shipment-updates storage bucket. Migration 014 adds sms_opt_out + whatsapp_opt_out columns to customers.
+
+---
+
 ## Session P — 2026-04-14 — Phase 2: Shipment tracking
 
 ### Goal
