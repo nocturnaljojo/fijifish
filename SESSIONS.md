@@ -17,17 +17,13 @@ Found: QA session 2026-04-12. Verified resolved: QA checkout-flow session 2026-0
 `useState(() => getTimeLeft(targetTimestamp))` calls `Date.now()` on init, causing SSR/client divergence → React regenerates tree → console error on every homepage load.
 **RESOLVED** — Session I 2026-04-14: state initialised with `totalSeconds: -1` (SSR-safe), populated in `useEffect`. Lint rule disabled with comment for the intentional synchronous setState on mount.
 
-### #3 — ACTION REQUIRED: Clerk session token not customised
+### #3 — RESOLVED: Clerk session token not customised
 Role-based middleware and `getUserRole()` require Clerk to include `publicMetadata` in the session JWT.
-Must be set in **Clerk Dashboard → Sessions → Customize session token**:
-```json
-{ "metadata": "{{user.public_metadata}}" }
-```
-Without this, all users are treated as buyers and `/admin`, `/supplier`, `/driver` routes redirect to `/`.
+**RESOLVED** — 2026-04-14 (Session I config): Clerk Dashboard → Sessions → Customize session token set to `{ "metadata": "{{user.public_metadata}}" }`. Admin role set on primary user (jovilisi@protonmail.com) via Clerk Dashboard → Users → Public Metadata: `{"role": "admin"}`.
 
-### #4 — ACTION REQUIRED: Verify Vercel env vars
+### #4 — RESOLVED: Verify Vercel env vars
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` must be set in Vercel → Settings → Environment Variables.
-`SUPABASE_SERVICE_ROLE_KEY` only needed for admin/webhook API routes (not required for the homepage fish grid).
+**RESOLVED** — 2026-04-14 (Session I config): All env vars confirmed set in Vercel — Supabase (URL + anon key + service role), Stripe (secret key + webhook secret), Clerk (publishable + secret), Mapbox token, Twilio (SID + auth token + phone).
 
 ---
 
@@ -42,33 +38,37 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
-## Session I — 2026-04-14 — End-to-end checkout verified; lint clean
+## Session I — 2026-04-14 — End-to-end checkout verified; infrastructure fully live
 
 ### Goal
-Verify the full checkout flow works end-to-end locally with real Stripe events, confirm migration 011 applied, and tidy untracked QA test files.
+Verify the full checkout flow works end-to-end locally with real Stripe events, confirm migration 011 applied, tidy untracked QA test files, and complete all manual config milestones.
 
-### What was verified / done
-- **Stripe CLI installed** — `stripe listen --forward-to localhost:3000/api/webhooks/stripe` running locally
-- **checkout.session.completed round-trip confirmed** — order created in Supabase on webhook receipt; `/order/success` renders correctly with 4-step timeline
-- **Migration 011 applied** — `delivery_address` + `delivery_notes` columns now exist on `orders` table; checkout route can persist delivery address
-- **Vercel env vars confirmed** — `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` set in Vercel; `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` confirmed
+### Code changes
+- **Migration 011 applied** — `delivery_address` + `delivery_notes` columns now exist on `orders` table; checkout route now persists delivery address correctly
 - **QA test files committed** — `tests/qa-checkout-flow.mjs` + `tests/qa-checkout-flow-full.mjs` + reports (previously untracked)
-- **Lint clean** — fixed 4 unused-var errors in test files; fixed CountdownTimer (Known Issue #5) with `eslint-disable` comment (SSR-safe initialise pattern already implemented)
+- **Lint clean** — fixed 4 unused-var errors in test files; fixed CountdownTimer (Known Issue #5) with `eslint-disable` comment (SSR-safe pattern already in place)
 
-### Decisions made
-- CountdownTimer Already SSR-safe (initializes `totalSeconds: -1`, populates in `useEffect`). Lint rule `react-hooks/set-state-in-effect` disabled for that line — the immediate mount initialisation is intentional and correct.
+### End-to-end verification
+- **Stripe CLI installed** at `C:\dev\stripe\stripe.exe` — `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+- **Stripe CLI authenticated** to FijiFish Pacific Seafood sandbox account
+- **checkout.session.completed round-trip confirmed** — form fill → Stripe payment → webhook fires → order confirmed in Supabase → `/order/success` renders with 4-step timeline
 
-### Known issues resolved
-- Known Issue #5 (CountdownTimer lint) — formally closed with eslint-disable comment; hydration fix was already in place
+### Manual config milestones (not in code)
+- **Stripe production webhook** — endpoint `https://vitifish.vercel.app/api/webhooks/stripe` registered; events: `checkout.session.completed`, `payment_intent.payment_failed`, `charge.refunded`; signing secret matches `STRIPE_WEBHOOK_SECRET` in Vercel
+- **Clerk session token** — `{ "metadata": "{{user.public_metadata}}" }` added in Clerk Dashboard → Sessions → Customize session token (closes Known Issue #3)
+- **Admin role set** — `jovilisi@protonmail.com` Public Metadata: `{"role": "admin"}` via Clerk Dashboard → Users
+- **All Vercel env vars confirmed** — Supabase (URL + anon + service role), Stripe (secret + webhook secret), Clerk (publishable + secret), Mapbox token, Twilio SID + auth + phone (closes Known Issue #4)
 
-### TODOs remaining
-- [ ] Clerk session token customisation (Known Issue #3) — role middleware blocked
-- [ ] Clerk webhook `/api/webhooks/clerk` — sync new users to Supabase `users` table
-- [ ] Realtime capacity subscriptions (`src/lib/scarcity.ts`)
-- [ ] Supplier portal (`/supplier/*`) — Phase 2
+### Known issues resolved this session
+- **#3** — Clerk session token configured ✓
+- **#4** — All Vercel env vars set ✓
+- **#5** — CountdownTimer hydration fix confirmed; lint rule documented ✓
 
 ### Next session
-Start Phase 2 groundwork: Clerk webhook to sync users to Supabase, then supplier portal scaffolding.
+1. Clerk webhook (`/api/webhooks/clerk`) — sync new signups to Supabase `users` + `customers` tables so order history works immediately after signup
+2. Supplier portal (`/supplier/*`) — Phase 2 groundwork
+3. PayTo enablement in Stripe Dashboard (lower fees for AU bank-to-bank payments)
+4. Create `stripe-patterns-fijifish.md` — project-specific Stripe patterns reference doc
 
 ---
 

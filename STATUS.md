@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Session I)
+Last updated: 2026-04-14 (Sessions H–I + config milestones)
 
 ---
 
@@ -175,7 +175,7 @@ Last updated: 2026-04-14 (Session I)
 |---------|--------|-------|
 | Vercel | LIVE | Project "vitifish", team "jovis-projects-e419e68a", auto-deploys on push to main |
 | Supabase | LIVE | AU region, anon key set in Vercel |
-| Clerk | LIVE | Auth working; **session token NOT customised** (see Known Issues) |
+| Clerk | LIVE | Auth working; session token customised; admin role set on primary user |
 | Stripe | LIVE | `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` confirmed in Vercel; webhook round-trip tested locally with Stripe CLI |
 | Twilio | NOT CONNECTED | Keys not yet added |
 | Mapbox | NOT CONNECTED | Keys not yet added |
@@ -184,17 +184,19 @@ Last updated: 2026-04-14 (Session I)
 
 ## Known issues (action required)
 
-**#3 — Clerk session token not customised**
-Role middleware and getUserRole() return "buyer" for all users until this is set.
-Fix: Clerk Dashboard → Sessions → Customize session token → add `{ "metadata": "{{user.public_metadata}}" }`
+**No open blocking issues.** All infrastructure live and configured.
 
-**#4 — RESOLVED: Vercel env vars**
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` confirmed set in Vercel (Session I).
+**Resolved:**
+- #3 — Clerk session token: `{ "metadata": "{{user.public_metadata}}" }` set in Clerk Dashboard (2026-04-14)
+- #4 — All Vercel env vars confirmed: Supabase, Stripe, Clerk, Mapbox, Twilio (2026-04-14)
+- #5 — CountdownTimer SSR-safe pattern in place; lint rule documented (2026-04-14)
+- #6 — /order/success accessible without auth (2026-04-12)
 
 ---
 
 ## Future Roadmap (not yet planned, noted for later)
 
+- [ ] PayTo enablement in Stripe Dashboard — lower fees for AU bank-to-bank payments
 - [ ] Afterpay integration — buy now pay later for AU customers
 - [ ] Zip Pay integration — alternative BNPL option
 - [ ] Fiji Airways partnership — negotiate volume cargo discounts, co-branding, promotional flights
