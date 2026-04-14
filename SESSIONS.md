@@ -38,6 +38,47 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session M — 2026-04-14 — UI audit polish pass
+
+### Goal
+Polish pass from UI-AUDIT.md: 5 targeted fixes — no new routes, no new features.
+
+### What we built
+- `src/components/CountdownTimer.tsx` — three-tier display format
+  - `>24h`: `Xd Xh` — no seconds (calm, informational)
+  - `1h–24h`: `Xh Xm Xs` — full precision
+  - `≤1h`: `Xm Xs` in `text-reef-coral` + `animate-pulse` — urgent final countdown
+- `src/components/DeliveryBanner.tsx` — mobile layout fixed
+  - Changed `sm:` breakpoints to `md:` on the 3-column row; now `flex-col` on mobile, `flex-row` at 768px+
+  - Mobile cargo bar breakpoint updated to match
+- `src/app/page.tsx` — section order rewritten per audit
+  - New order: Hero → SocialProof → Fish Grid → ProcessSteps → VillagePreview → UnlockBoard → DeliveryZoneBanner + DeliveryDemandPoll
+  - ProcessSteps moved immediately after fish grid (explains the product while attention is high)
+  - VillagePreview moved before UnlockBoard (mission-first, then community voting)
+- `src/components/UnlockBoard.tsx` — vote state persistence on mount
+  - Reads `fijiFish_voted` localStorage key on mount; pre-populates `voted` Set
+  - Returning visitors now see `✓ Voted` badges without re-voting
+- `src/components/FishCard.tsx` — non-AU user guard
+  - Both HeroFishCard and standard FishCard detect locale after mount via `detectCountryFromLocale(navigator.language)`
+  - Non-AU locale → disabled button: "Available in Australia only"
+  - AU or unknown locale → normal order flow (no false positives for undefined locale)
+
+### Decisions made
+- `≤1h` threshold for reef-coral + pulse in CountdownTimer (not `<6h`) — matches the "critical" window used in `isCritical` but visually escalates only when truly imminent
+- Used `md:` not `sm:` breakpoint for DeliveryBanner — at 640px the 3-column row was still too cramped; 768px gives proper breathing room
+- `detectCountryFromLocale` used (not a geo-IP service) — intentional: fast, no external API, only fires if locale explicitly reveals a non-AU country code; ambiguous/null locales default to showing the order button
+
+### TODOs left in code
+- [ ] `src/components/DeliveryBanner.tsx` — `CARGO_CONFIG.capacityPercent` still hardcoded; wire to `inventory_availability` aggregator in Phase 1b
+- [ ] `src/app/dashboard/page.tsx` — `TODO: Add RLS policy orders: buyer can only see their own rows` (Issue #8)
+
+### Next session
+First task: Set `STRIPE_PORTAL_URL` in Vercel env vars, then test `/dashboard` end-to-end with a real order
+File to open: Vercel dashboard → Settings → Environment Variables
+Context needed: `STRIPE_PORTAL_URL` comes from Stripe Dashboard → Settings → Billing → Customer portal → copy the portal link
+
+---
+
 ## Session L — 2026-04-14 — Buyer dashboard
 
 ### What was built

@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–L — flight window state machine + buyer dashboard)
+Last updated: 2026-04-14 (Sessions K–M — flight window state machine + buyer dashboard + UI audit polish)
 
 ---
 
