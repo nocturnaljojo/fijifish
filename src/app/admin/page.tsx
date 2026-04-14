@@ -2,6 +2,52 @@ import { createServerSupabaseClient } from "@/lib/supabase";
 import { getActiveFlightWindow, getWindowInventory, calcCargoPercent } from "@/lib/flight-windows";
 import Link from "next/link";
 
+interface ActiveRun {
+  id: string;
+  status: string;
+  started_at: string | null;
+  stop_count: number | null;
+  drivers: {
+    users: { full_name: string | null } | null;
+  } | null;
+  stops: {
+    status: string;
+    sequence_number: number;
+    address: string | null;
+  }[];
+}
+
+async function getActiveRuns(): Promise<ActiveRun[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data: runs } = await supabase
+      .from("delivery_runs")
+      .select(`
+        id, status, started_at, stop_count,
+        drivers(users:user_id(full_name))
+      `)
+      .eq("status", "active")
+      .order("started_at", { ascending: false });
+
+    if (!runs?.length) return [];
+
+    const runIds = runs.map((r) => r.id);
+    const { data: stops } = await supabase
+      .from("delivery_stops")
+      .select("delivery_run_id, status, sequence_number, address")
+      .in("delivery_run_id", runIds)
+      .order("sequence_number", { ascending: true });
+
+    return runs.map((run) => ({
+      ...run,
+      drivers: run.drivers as unknown as { users: { full_name: string | null } | null } | null,
+      stops: (stops ?? []).filter((s) => s.delivery_run_id === run.id),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function getDashboardStats() {
   try {
     const supabase = createServerSupabaseClient();
@@ -47,9 +93,10 @@ function StatCard({
 }
 
 export default async function AdminDashboard() {
-  const [stats, activeWindow] = await Promise.all([
+  const [stats, activeWindow, activeRuns] = await Promise.all([
     getDashboardStats(),
     getActiveFlightWindow(),
+    getActiveRuns(),
   ]);
 
   const inventory = activeWindow ? await getWindowInventory(activeWindow.id) : [];
@@ -126,6 +173,64 @@ export default async function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Active deliveries */}
+      {activeRuns.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-mono text-text-secondary uppercase tracking-widest mb-3">
+            Active Deliveries
+          </h2>
+          <div className="flex flex-col gap-3">
+            {activeRuns.map((run) => {
+              const driverName = run.drivers?.users?.full_name ?? "Unknown driver";
+              const deliveredCount = run.stops.filter((s) => s.status === "delivered").length;
+              const totalStops = run.stop_count ?? run.stops.length;
+              const currentStop = run.stops.find(
+                (s) => s.status === "arrived" || s.status === "pending",
+              );
+              const progressPct = totalStops > 0 ? Math.round((deliveredCount / totalStops) * 100) : 0;
+
+              return (
+                <div key={run.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <p className="font-semibold text-text-primary text-sm">{driverName}</p>
+                      {run.started_at && (
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          Started{" "}
+                          {new Date(run.started_at).toLocaleTimeString("en-AU", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Australia/Sydney",
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs font-mono text-ocean-teal bg-ocean-teal/10 border border-ocean-teal/20 px-2 py-0.5 rounded-full shrink-0">
+                      {deliveredCount}/{totalStops} stops
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full h-1.5 bg-white/10 rounded-full mb-3">
+                    <div
+                      className="h-1.5 rounded-full bg-lagoon-green transition-all"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+
+                  {currentStop && (
+                    <p className="text-xs text-text-secondary">
+                      Current stop #{currentStop.sequence_number}
+                      {currentStop.address ? ` · ${currentStop.address}` : ""}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Quick actions */}
       <div>

@@ -262,6 +262,79 @@ export interface VillageMedia {
   created_at: string;
 }
 
+// ── Driver portal ─────────────────────────────────────────────────────────────
+
+export interface Driver {
+  id: string;
+  user_id: string;
+  vehicle_description: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export type DeliveryRunStatus = "planned" | "active" | "completed";
+
+export interface DeliveryRun {
+  id: string;
+  flight_window_id: string;
+  driver_id: string;
+  status: DeliveryRunStatus;
+  started_at: string | null;
+  completed_at: string | null;
+  total_distance_km: number | null;
+  total_duration_minutes: number | null;
+  stop_count: number | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type DeliveryStopStatus = "pending" | "arrived" | "delivered" | "skipped" | "escalated";
+
+export interface DeliveryStop {
+  id: string;
+  delivery_run_id: string;
+  order_id: string;
+  customer_id: string;
+  sequence_number: number;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  status: DeliveryStopStatus;
+  arrived_at: string | null;
+  delivered_at: string | null;
+  is_communal: boolean;
+  communal_group_id: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DeliveryProof {
+  id: string;
+  delivery_stop_id: string;
+  order_id: string;
+  photo_url: string;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  captured_at: string | null;
+  received_by_name: string | null;
+  is_proxy_delivery: boolean;
+  admin_approval_required: boolean;
+  admin_approved: boolean | null;
+  admin_approved_by: string | null;
+  admin_approved_at: string | null;
+  admin_note: string | null;
+  created_at: string;
+}
+
+export interface DriverGpsLog {
+  id: string;
+  delivery_run_id: string;
+  driver_id: string;
+  lat: number;
+  lng: number;
+  captured_at: string;
+}
+
 // ── Community ─────────────────────────────────────────────────────────────────
 
 export interface FishInterestVote {
