@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isSupplierRoute = createRouteMatcher(["/supplier(.*)"]);
 const isDriverRoute = createRouteMatcher(["/driver(.*)"]);
-const isAuthRoute = createRouteMatcher(["/account(.*)", "/track(.*)"]);
+const isAuthRoute = createRouteMatcher(["/account(.*)", "/dashboard(.*)", "/track(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { sessionClaims, userId } = await auth();

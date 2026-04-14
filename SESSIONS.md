@@ -38,6 +38,49 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session L — 2026-04-14 — Buyer dashboard
+
+### What was built
+- `src/app/dashboard/layout.tsx` — server layout; auth-guards whole `/dashboard/*` tree; fetches Clerk user for nav
+- `src/app/dashboard/page.tsx` — My Orders (server component)
+  - Query path: Clerk userId → `users.clerk_id` → `customers.user_id` → `orders.customer_id`
+  - Nested select: orders + order_items + fish_species + delivery_zones + flight_windows
+  - `getFlightWindowStatus()` applied server-side to compute window state for each order
+  - Active orders (non-delivered/cancelled/refunded) shown first, then history
+  - Empty state: "No orders yet — Browse Fresh Fish →" CTA to `/#fish-grid`
+- `src/app/dashboard/account/page.tsx` — account info placeholder (name, email, phone, delivery address, member since)
+- `src/app/dashboard/billing/page.tsx` — Stripe Customer Portal link
+  - Portal URL from `STRIPE_PORTAL_URL` env var (server-only); appends `?prefilled_email=<email>`
+  - Falls back to "Contact us at hello@vitifish.com.au" when env var not set
+  - Static payment info panel (PCI, no stored cards, refund policy)
+- `src/components/dashboard/DashboardNav.tsx` — client component
+  - Desktop: left sidebar (208px); mobile: fixed bottom tab bar (3 tabs)
+  - Active state via `usePathname()`
+- `src/components/dashboard/OrderCard.tsx` — client component
+  - Dual badge: order status + flight window status (window badge hidden if order is failed/cancelled/refunded)
+  - Order items list with per-item price breakdown
+  - Delivery info section (zone + delivery_address + delivery_notes from migration 011)
+  - Flight section (flight number, flight_date, computed window state)
+  - Reorder button (delivered orders only) — zustand cart pattern
+- `src/types/database.ts` — added missing Order fields: `placed_at`, `delivery_fee_aud_cents`, `delivered_at`, `rating`, `feedback_text`, `delivery_run_id`
+- `src/lib/config.ts` — added `BILLING_CONFIG.stripePortalUrl` from `STRIPE_PORTAL_URL` env var
+- `src/proxy.ts` — added `/dashboard(.*)` to `isAuthRoute` matcher
+- `src/components/Navbar.tsx` — "My Orders" link for buyers (non-admin, non-supplier); UserButton "Order History" now points to `/dashboard`
+
+### Architecture decisions
+- Service role used for order queries (RLS policies not yet written); explicit `WHERE customer_id = ?` provides same security
+- `TODO: Add RLS policy orders: buyer can only see their own rows` left as comment in page.tsx
+- Flight window status computed server-side in page.tsx (no re-fetch on client needed for static display)
+- `STRIPE_PORTAL_URL` is a non-`NEXT_PUBLIC_` env var — portal URL is server-rendered, never exposed client-side
+
+### Next session
+1. Set `STRIPE_PORTAL_URL` in Vercel env vars (from Stripe Dashboard → Settings → Billing → Customer portal)
+2. Test /dashboard with a real order (post-checkout)
+3. RLS policies for orders/order_items tables (Phase 1b)
+4. Supplier portal scaffolding (Phase 2)
+
+---
+
 ## Session K — 2026-04-14 — Flight window state machine + dynamic banner/cards
 
 ### What was built

@@ -96,6 +96,18 @@ export const THRESHOLDS = {
   zoneUnlockTarget: 20,
 } as const;
 
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+export const BILLING_CONFIG = {
+  /**
+   * Static URL from Stripe Dashboard → Settings → Billing → Customer portal.
+   * Append `?prefilled_email=<email>` for a better UX.
+   * Set STRIPE_PORTAL_URL in Vercel env vars (server-only — no NEXT_PUBLIC_ prefix).
+   * If not set, a static "Contact us" fallback is shown.
+   */
+  stripePortalUrl: process.env.STRIPE_PORTAL_URL ?? null,
+} as const;
+
 // ── Social proof stats ────────────────────────────────────────────────────────
 
 export const SOCIAL_PROOF_STATS = [

@@ -121,11 +121,17 @@ export interface Order {
   customer_id: string;
   flight_window_id: string;
   delivery_zone_id: string;
+  delivery_run_id: string | null;
   status: OrderStatus;
   total_aud_cents: number;
+  delivery_fee_aud_cents: number;
   stripe_payment_intent_id: string | null;
   delivery_address: string | null;
   delivery_notes: string | null;
+  placed_at: string;
+  delivered_at: string | null;
+  rating: number | null;
+  feedback_text: string | null;
   created_at: string;
   updated_at: string;
 }

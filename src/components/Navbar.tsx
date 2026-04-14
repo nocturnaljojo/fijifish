@@ -77,6 +77,14 @@ export default function Navbar() {
                 Supplier Portal
               </Link>
             )}
+            {!isAdmin && !isSupplier && (
+              <Link
+                href="/dashboard"
+                className="text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:text-text-primary transition-colors px-2 py-1 rounded hover:bg-white/5"
+              >
+                My Orders
+              </Link>
+            )}
 
             <UserButton
               appearance={{
@@ -92,13 +100,13 @@ export default function Navbar() {
             >
               <UserButton.MenuItems>
                 <UserButton.Link
-                  label="My Account"
-                  labelIcon={<span>👤</span>}
-                  href="/account"
+                  label="My Orders"
+                  labelIcon={<span>📦</span>}
+                  href="/dashboard"
                 />
                 <UserButton.Link
-                  label="Order History"
-                  labelIcon={<span>📦</span>}
+                  label="My Account"
+                  labelIcon={<span>👤</span>}
                   href="/account"
                 />
                 {isAdmin && (
