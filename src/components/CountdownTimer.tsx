@@ -32,7 +32,8 @@ export default function CountdownTimer({
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: -1 });
 
   useEffect(() => {
-    setTimeLeft(getTimeLeft(targetTimestamp));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTimeLeft(getTimeLeft(targetTimestamp)); // initialise immediately so client shows real time, not "--h --m --s", after mount
     const timer = setInterval(() => {
       setTimeLeft(getTimeLeft(targetTimestamp));
     }, 1000);

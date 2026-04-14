@@ -13,11 +13,9 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 **RESOLVED** — QA 2026-04-12 confirms /order/success loads HTTP 200 without redirect in current build.
 Found: QA session 2026-04-12. Verified resolved: QA checkout-flow session 2026-04-12.
 
-### #5 — HIGH: CountdownTimer hydration mismatch
+### #5 — RESOLVED: CountdownTimer hydration mismatch
 `useState(() => getTimeLeft(targetTimestamp))` calls `Date.now()` on init, causing SSR/client divergence → React regenerates tree → console error on every homepage load.
-Fix: initialise with `totalSeconds: -1`, populate live value in `useEffect`.
-File: `src/components/CountdownTimer.tsx` line 32.
-Found: QA session 2026-04-12.
+**RESOLVED** — Session I 2026-04-14: state initialised with `totalSeconds: -1` (SSR-safe), populated in `useEffect`. Lint rule disabled with comment for the intentional synchronous setState on mount.
 
 ### #3 — ACTION REQUIRED: Clerk session token not customised
 Role-based middleware and `getUserRole()` require Clerk to include `publicMetadata` in the session JWT.
@@ -41,6 +39,36 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 - [ ] Fiji Airways loyalty tie-in — "FijiFish Flyer" points or bundled deals
 - [ ] Multi-payment gateway — Stripe + Afterpay + Zip Pay checkout options
 - [ ] Pacific community payment methods — M-PAiSA (Vodafone Fiji), MyCash for FJD payments
+
+---
+
+## Session I — 2026-04-14 — End-to-end checkout verified; lint clean
+
+### Goal
+Verify the full checkout flow works end-to-end locally with real Stripe events, confirm migration 011 applied, and tidy untracked QA test files.
+
+### What was verified / done
+- **Stripe CLI installed** — `stripe listen --forward-to localhost:3000/api/webhooks/stripe` running locally
+- **checkout.session.completed round-trip confirmed** — order created in Supabase on webhook receipt; `/order/success` renders correctly with 4-step timeline
+- **Migration 011 applied** — `delivery_address` + `delivery_notes` columns now exist on `orders` table; checkout route can persist delivery address
+- **Vercel env vars confirmed** — `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` set in Vercel; `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` confirmed
+- **QA test files committed** — `tests/qa-checkout-flow.mjs` + `tests/qa-checkout-flow-full.mjs` + reports (previously untracked)
+- **Lint clean** — fixed 4 unused-var errors in test files; fixed CountdownTimer (Known Issue #5) with `eslint-disable` comment (SSR-safe initialise pattern already implemented)
+
+### Decisions made
+- CountdownTimer Already SSR-safe (initializes `totalSeconds: -1`, populates in `useEffect`). Lint rule `react-hooks/set-state-in-effect` disabled for that line — the immediate mount initialisation is intentional and correct.
+
+### Known issues resolved
+- Known Issue #5 (CountdownTimer lint) — formally closed with eslint-disable comment; hydration fix was already in place
+
+### TODOs remaining
+- [ ] Clerk session token customisation (Known Issue #3) — role middleware blocked
+- [ ] Clerk webhook `/api/webhooks/clerk` — sync new users to Supabase `users` table
+- [ ] Realtime capacity subscriptions (`src/lib/scarcity.ts`)
+- [ ] Supplier portal (`/supplier/*`) — Phase 2
+
+### Next session
+Start Phase 2 groundwork: Clerk webhook to sync users to Supabase, then supplier portal scaffolding.
 
 ---
 

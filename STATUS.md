@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Session H)
+Last updated: 2026-04-14 (Session I)
 
 ---
 
@@ -132,7 +132,7 @@ Last updated: 2026-04-14 (Session H)
 
 **Note: migration 006 was skipped.**
 
-**Known schema gap:** `orders` table missing `delivery_address` and `delivery_notes` columns — checkout route inserts these but they don't exist. Needs migration 011.
+**Migration 011 applied:** `delivery_address` and `delivery_notes` columns added to `orders` table. Checkout route now persists delivery address correctly.
 
 ---
 
@@ -176,7 +176,7 @@ Last updated: 2026-04-14 (Session H)
 | Vercel | LIVE | Project "vitifish", team "jovis-projects-e419e68a", auto-deploys on push to main |
 | Supabase | LIVE | AU region, anon key set in Vercel |
 | Clerk | LIVE | Auth working; **session token NOT customised** (see Known Issues) |
-| Stripe | PARTIALLY CONNECTED | Code ready; `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` needed in Vercel |
+| Stripe | LIVE | `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` confirmed in Vercel; webhook round-trip tested locally with Stripe CLI |
 | Twilio | NOT CONNECTED | Keys not yet added |
 | Mapbox | NOT CONNECTED | Keys not yet added |
 
@@ -188,9 +188,8 @@ Last updated: 2026-04-14 (Session H)
 Role middleware and getUserRole() return "buyer" for all users until this is set.
 Fix: Clerk Dashboard → Sessions → Customize session token → add `{ "metadata": "{{user.public_metadata}}" }`
 
-**#4 — Vercel env vars**
-`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` must be set in Vercel.
-`SUPABASE_SERVICE_ROLE_KEY` only needed for admin/webhook routes (NOT public pages).
+**#4 — RESOLVED: Vercel env vars**
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` confirmed set in Vercel (Session I).
 
 ---
 
