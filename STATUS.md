@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-12 (Session G)
+Last updated: 2026-04-14 (Session H)
 
 ---
 
@@ -54,7 +54,7 @@ Last updated: 2026-04-12 (Session G)
 | POST `/api/delivery-demand/vote` | LIVE | Delivery zone demand poll |
 | POST `/api/checkout` | LIVE | Cart → Stripe checkout session |
 | POST `/api/webhooks/clerk` | NOT BUILT | User sync to Supabase |
-| POST `/api/webhooks/stripe` | LIVE | checkout.session.completed → order confirmed |
+| POST `/api/webhooks/stripe` | LIVE | checkout.session.completed + payment_failed + charge.refunded; capacity management |
 | GET/POST/PATCH `/api/admin/windows` | LIVE | Flight window CRUD |
 | GET/POST/PATCH `/api/admin/pricing` | LIVE | Inventory price + capacity |
 | GET/PATCH `/api/admin/photos` | LIVE | Photo approve/reject |
@@ -127,8 +127,12 @@ Last updated: 2026-04-12 (Session G)
 | `impact_stories` | 004 | Live |
 | `catch_batches` | 007 | Schema ready; not yet used in UI |
 | `village_media` | 008 | Schema ready; not yet used in UI |
+| `inventory_availability` | 009 | `increment_reserved_kg` RPC — atomic reservation at checkout |
+| `orders` | 010 | `payment_failed` added to status CHECK; `decrement_reserved_kg` RPC for capacity restoration |
 
 **Note: migration 006 was skipped.**
+
+**Known schema gap:** `orders` table missing `delivery_address` and `delivery_notes` columns — checkout route inserts these but they don't exist. Needs migration 011.
 
 ---
 

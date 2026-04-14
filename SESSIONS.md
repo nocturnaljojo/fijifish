@@ -44,6 +44,42 @@ Without this, all users are treated as buyers and `/admin`, `/supplier`, `/drive
 
 ---
 
+## Session H — 2026-04-14 — Stripe webhook handler (order lifecycle backbone)
+
+### Goal
+Build a complete, production-ready Stripe webhook handler covering the full order lifecycle: payment confirmation, payment failure, and refunds — with atomic capacity management throughout.
+
+### What we built
+- `src/app/api/webhooks/stripe/route.ts` — full rewrite of stub; handles `checkout.session.completed` (confirm order), `payment_intent.payment_failed` (mark failed, restore capacity), `charge.refunded` (mark refunded, restore capacity); all unknown events return 200 safely
+- `supabase/migrations/010_payment_failed_status_and_decrement_rpc.sql` — adds `payment_failed` to `orders.status` CHECK constraint; creates `decrement_reserved_kg(inv_id, delta)` RPC with `GREATEST(0, ...)` floor
+- `src/types/database.ts` — added `payment_failed` to `OrderStatus` union type
+- Applied migration 010 to Supabase via MCP
+
+### Decisions made
+- **No inventory change on `checkout.session.completed`** — capacity is already reserved atomically by `/api/checkout` before the Stripe session is created. Double-decrementing would oversell. Comment in code explains this.
+- **`payment_failed` status added via migration** — distinct from admin-initiated `cancelled`; lets admin distinguish between "never paid" and "admin cancelled"
+- **`logNotification()` swallows its own errors** — a notification log failure must never cause Stripe to retry and reprocess an order (idempotency invariant)
+- **`decrement_reserved_kg` uses `GREATEST(0, reserved_kg - delta)`** — safe to call on already-zeroed rows, prevents negative reserved_kg
+- **Idempotency guards on every handler** — status pre-checks before writing ensure duplicate Stripe deliveries are safe
+- **`restoreCapacity()` looks up inventory by `(fish_species_id, flight_window_id, village_id)`** — uses order's `flight_window_id` + order_item's `fish_species_id` + `village_id` to find the inventory row, then calls the RPC
+
+### TODOs left in code
+- [ ] `src/app/api/checkout/route.ts` — `delivery_address` and `delivery_notes` columns don't exist on `orders` table per migration 001; these inserts are silently failing. Needs a migration to add the columns or the checkout route needs fixing.
+- [ ] `notification_log` entries use `channel: 'email'` as placeholder — real Twilio SMS/WhatsApp dispatch is Phase 2 (`src/lib/notifications.ts`)
+- [ ] `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` still need to be set in Vercel env vars
+
+### Parking lot (deferred)
+- [ ] `stripe listen --forward-to localhost:3000/api/webhooks/stripe` — local webhook testing when Stripe keys are set
+- [ ] Clerk webhook `/api/webhooks/clerk` — sync new users to Supabase `users` table (listed in STATUS.md as NOT BUILT)
+- [ ] Realtime capacity subscriptions (`src/lib/scarcity.ts`) — Supabase Realtime for live capacity bar updates
+
+### Next session
+First task: Fix the `orders` table — add `delivery_address` and `delivery_notes` columns via migration 011 so the checkout flow can actually write order data to the DB.
+File to open: `supabase/migrations/001_initial_schema.sql` (reference), then write `supabase/migrations/011_orders_delivery_fields.sql`
+Context needed: The `/api/checkout` route inserts `delivery_address` and `delivery_notes` into `orders` but these columns don't exist. Supabase silently ignores unknown columns on insert which means order delivery info is being lost. This must be fixed before end-to-end order testing can succeed.
+
+---
+
 ## Session G — 2026-04-12 — UI/UX audit + trust fixes
 
 ### Completed
