@@ -88,7 +88,32 @@ export interface InventoryAvailability {
   available_kg: number;
   price_aud_cents: number;
   price_fjd_cents: number;
+  confirmed_by_supplier: boolean;
+  confirmed_at: string | null;
   updated_at: string;
+}
+
+export interface Supplier {
+  id: string;
+  user_id: string;
+  village_id: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CatchPhoto {
+  id: string;
+  supplier_id: string;
+  village_id: string;
+  fish_species_id: string;
+  flight_window_id: string | null;
+  image_url: string;
+  estimated_weight_kg: number | null;
+  note: string | null;
+  status: "pending" | "approved" | "rejected";
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
 }
 
 // ── Customers and orders ──────────────────────────────────────────────────────
