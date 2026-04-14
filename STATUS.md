@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard)
+Last updated: 2026-04-14 (Sessions K–P — flight window state machine + buyer dashboard + UI audit + supplier portal + admin dashboard + shipment tracking)
 
 ---
 
@@ -30,11 +30,13 @@ Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer
 | `/admin/photos` | Catch photo approval queue | LIVE |
 | `/admin/stories` | Impact stories CRUD | LIVE |
 | `/admin/orders` | All orders, status/window filter, expandable rows | LIVE |
+| `/admin/tracking` | Shipment timeline per active window + Add Update form | LIVE |
 | `/admin/customers` | User list | LIVE |
 | `/admin/broadcasts` | SMS/WhatsApp blasts | STUB (Phase 1b) |
 | `/admin/settings` | Zones + villages | LIVE (read-only) |
 | `/supplier` | Supplier dashboard — flight window + inventory confirmation | LIVE |
 | `/supplier/photos` | Catch photo upload + photo list | LIVE |
+| `/supplier/tracking` | Post caught/processing/packed/at_airport updates with photos | LIVE |
 | `/supplier/history` | Past flight windows | LIVE |
 | `/driver/*` | Driver portal | NOT BUILT |
 | `/checkout` | Checkout (auth-gated delivery form) | LIVE |
@@ -47,7 +49,7 @@ Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer
 | `/dashboard` | Buyer dashboard — My Orders (active + history) | LIVE |
 | `/dashboard/account` | Account info (name, email, phone, address) | LIVE |
 | `/dashboard/billing` | Stripe Customer Portal link + payment info | LIVE |
-| `/track/[orderId]` | Shipment tracking | NOT BUILT |
+| `/dashboard/tracking/[orderId]` | Buyer order tracking — 11-step timeline with photos | LIVE |
 
 ---
 
@@ -67,6 +69,7 @@ Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer
 | GET/POST/PATCH `/api/admin/stories` | LIVE | Impact stories CRUD |
 | PATCH `/api/supplier/inventory` | LIVE | Update kg + confirm_by_supplier; village-scoped |
 | POST `/api/supplier/photos` | LIVE | Upload to catch-photos bucket + insert catch_photos row |
+| POST `/api/tracking` | LIVE | Role-gated shipment update; photo upload to shipment-updates bucket |
 
 ---
 
@@ -154,6 +157,8 @@ Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer
 
 **Migration 011 applied:** `delivery_address` and `delivery_notes` columns added to `orders` table. Checkout route now persists delivery address correctly.
 
+**Migration 013 created:** `shipment-updates` storage bucket SQL (public, 2MB, JPEG/PNG/WebP). **MANUAL TASK REQUIRED:** Apply migration 013 in Supabase Dashboard → SQL Editor (Storage bucket INSERT is not auto-applied).
+
 **Migration 012 applied:** `users.is_active` (boolean, default true) + `users.deleted_at` (timestamptz) added for soft-delete support. Clerk webhook sets `is_active=false` + `deleted_at` on `user.deleted` instead of hard-deleting (which would cascade and destroy order history).
 
 ---
@@ -162,7 +167,8 @@ Last updated: 2026-04-14 (Sessions K–O — flight window state machine + buyer
 
 | Bucket | Access | Max size | Status |
 |--------|--------|----------|--------|
-| `catch-photos` | Public | 1MB | Created, no uploads yet |
+| `catch-photos` | Public | 1MB | Created, uploads live |
+| `shipment-updates` | Public | 2MB | Migration 013 written — APPLY MANUALLY |
 | `delivery-proofs` | Private | 5MB | Created, no uploads yet |
 | `village-media` | Public | 50MB | Created, no uploads yet |
 | `qr-labels` | Public | 512KB | Created, no uploads yet |

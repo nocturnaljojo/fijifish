@@ -38,6 +38,49 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session P — 2026-04-14 — Phase 2: Shipment tracking
+
+### Goal
+Build the supply chain visibility layer — suppliers post status updates from reef to airport, admin extends through flight and delivery, buyers see their order's full journey.
+
+### What we built
+- `supabase/migrations/013_shipment_updates_bucket.sql` — `shipment-updates` storage bucket (public, 2MB, JPEG/PNG/WebP). **MANUAL APPLY REQUIRED** in Supabase SQL editor
+- `src/types/database.ts` — added `ShipmentUpdateStatus` union type (11 values) + `ShipmentUpdate` interface matching migration 001 schema
+- `src/app/api/tracking/route.ts` — POST endpoint; role gate: admin posts any status + any village, supplier posts only caught/processing/packed/at_airport + their session village; optional photo upload to `shipment-updates` bucket; resolves `users.id` from clerk_id; inserts `shipment_updates` row
+- `src/app/admin/tracking/page.tsx` — server component: fetches windows in closed→delivered range; queries updates with updater names and village names via parallel lookups; fetches available villages per window from `inventory_availability`; renders vertical timeline per window (newest first); inline `TrackingForm`
+- `src/app/admin/tracking/TrackingForm.tsx` — client component: village select, full status select (11 options), note input, file picker with preview; POST FormData to `/api/tracking`; `router.refresh()` on success
+- `src/app/supplier/tracking/page.tsx` — supplier-scoped: only sees their village updates for the active window; no village select (village from session); timeline of past updates
+- `src/app/supplier/tracking/SupplierTrackingForm.tsx` — client component: 4-option radio status select with hints; `capture="environment"` camera; photo preview with remove button; shows success toast, resets form
+- `src/app/dashboard/tracking/[orderId]/page.tsx` — buyer read-only view: validates buyer owns order; fetches all updates for flight window (all villages); 11-step timeline with icons (🎣→🎉); current step highlighted in ocean-teal with "NOW" badge; future steps greyed to 30% opacity; timestamps + photos per step; dark dashboard theme (inherited from layout)
+- `src/components/admin/AdminSidebar.tsx` — added Tracking nav item (🚚) between Orders and Fish & Pricing
+- `src/components/supplier/SupplierNav.tsx` — added Tracking tab (Truck icon) as 3rd tab; History moved to 4th
+- `src/components/dashboard/OrderCard.tsx` — added Track Order link button; shows when window status is in [packing, shipped, in_transit, landed, customs, delivering, delivered]; links to `/dashboard/tracking/[orderId]`
+
+### Architecture decisions
+- **All updates for a window shown to buyer, not filtered by village** — buyer ordered from a flight window; showing all village updates gives them the full journey even if their order has items from multiple villages
+- **Supplier status limited to 4 early stages** — caught/processing/packed/at_airport are supplier-facing; cargo_accepted through delivered are logistics/admin territory
+- **`village_id` required on all updates** — schema has NOT NULL; admin must select a village; supplier gets it from session claims
+- **Single `updateByStatus` map for buyer timeline** — if multiple updates with same status (duplicate posts), latest wins; acceptable for MVP
+- **`shipment-updates` bucket is a new migration (013)** — not in migration 005; requires manual apply in Supabase; noted in STATUS.md
+
+### TODOs left in code
+- [ ] `supabase/migrations/013_shipment_updates_bucket.sql` — MANUAL APPLY REQUIRED in Supabase SQL Editor before photo uploads will work
+- [ ] `/api/tracking` — no progression validation (admin override by design; supplier could post out-of-order). Add soft validation in Phase 2 hardening if needed
+- [ ] Buyer tracking page — no live refresh; requires manual reload to see new updates. Add polling or realtime subscription (Phase 3)
+
+### Parking lot (deferred)
+- [ ] Push/SMS notification to buyers when status changes (Phase 3 notification engine)
+- [ ] Realtime subscriptions for live tracking feed
+- [ ] Admin approval workflow for supplier-posted updates (`requires_admin_approval` column exists but not wired)
+- [ ] FlightRadar24 embed when status is in_flight
+
+### Next session
+First task: Apply migration 013 manually in Supabase, then test the full tracking flow end-to-end
+File to open: `supabase/migrations/013_shipment_updates_bucket.sql`
+Context needed: Bucket may need to be created manually in Supabase Dashboard → Storage → New bucket, OR paste the SQL into SQL Editor. After bucket exists, the photo upload in `/api/tracking` will work.
+
+---
+
 ## Session O — 2026-04-14 — Admin dashboard: flight windows, orders, photo approval
 
 ### Goal
