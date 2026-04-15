@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-15 (Sessions R–S — driver portal + admin delivery run assignment)
+Last updated: 2026-04-15 (Sessions R–T — driver portal + admin delivery run assignment + RLS policies)
 
 ---
 
@@ -178,6 +178,8 @@ Last updated: 2026-04-15 (Sessions R–S — driver portal + admin delivery run 
 
 **Migration 014 created:** `sms_opt_out` and `whatsapp_opt_out` boolean columns on `customers`. **MANUAL APPLY REQUIRED** in Supabase SQL Editor. Without it, channel-specific opt-outs won't work (broadcast_opt_out master flag still enforced).
 
+**Migration 015 created:** Full RLS policies on all 24 customer-facing tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor. Includes helper functions `requesting_user_clerk_id()` and `requesting_user_role()`. Public SELECT and anon INSERT policies work immediately; user-specific policies require Clerk JWT → Supabase setup (see issue #11).
+
 **Migration 013 created:** `shipment-updates` storage bucket SQL (public, 2MB, JPEG/PNG/WebP). **MANUAL TASK REQUIRED:** Apply migration 013 in Supabase Dashboard → SQL Editor (Storage bucket INSERT is not auto-applied).
 
 **Migration 012 applied:** `users.is_active` (boolean, default true) + `users.deleted_at` (timestamptz) added for soft-delete support. Clerk webhook sets `is_active=false` + `deleted_at` on `user.deleted` instead of hard-deleting (which would cascade and destroy order history).
@@ -242,10 +244,17 @@ Last updated: 2026-04-15 (Sessions R–S — driver portal + admin delivery run 
 `/dashboard/billing` falls back to a "Contact us" email until `STRIPE_PORTAL_URL` is set in Vercel.
 To fix: Stripe Dashboard → Settings → Billing → Customer portal → copy URL → add as `STRIPE_PORTAL_URL` in Vercel env vars (server-only, no NEXT_PUBLIC_ prefix).
 
-**#8 — RLS policies missing on orders/order_items**
-`/dashboard` queries use service role with explicit `WHERE customer_id = ?` as a security proxy.
-Proper RLS policies (`buyer can only read their own orders`) should be added in Phase 1b.
-Risk: low (service role is server-only, never exposed client-side), but must be done before Phase 2.
+**#8 — RESOLVED: RLS policies added (Session T, 2026-04-15)**
+Migration 015 written with full RLS coverage on all 24 tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor.
+Public SELECT policies work immediately (anon key). User-specific policies (orders, customers) require Clerk JWT → Supabase configuration (see #11 below).
+
+**#11 — Pending manual config: Clerk JWT → Supabase integration**
+`requesting_user_clerk_id()` helper in migration 015 reads `auth.jwt()->>'sub'` to identify the logged-in user.
+This only works after Clerk is configured as a JWT provider in Supabase:
+1. Supabase Dashboard → Authentication → JWT Settings → Add provider
+2. Add Clerk JWKS endpoint: `https://[your-clerk-domain]/.well-known/jwks.json`
+3. Pass the Clerk session token to Supabase client in buyer-facing flows (getToken from useAuth, pass as Authorization header)
+Until configured: user-specific RLS policies are effectively open; service-role + explicit WHERE clauses remain the security layer for admin/driver/supplier routes.
 
 **#9 — delivery-proofs bucket is private but proof route uses getPublicUrl()**
 Migration 005 created the `delivery-proofs` bucket as **private** (5MB, no public access). The proof API route calls `supabase.storage.from("delivery-proofs").getPublicUrl(filename)` which returns a URL but it will return 400 for unauthenticated requests on a private bucket.

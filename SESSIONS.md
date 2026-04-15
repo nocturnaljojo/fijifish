@@ -6,6 +6,34 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session T — 2026-04-15 — Security: RLS policies on all tables (closes #8)
+
+### Goal
+Write RLS policies for all customer-facing Supabase tables so the DB enforces access control at the row level, not just via application-layer WHERE clauses.
+
+### What we built
+- `supabase/migrations/015_rls_policies.sql` — 724 lines; enables RLS on 24 tables (impact_stories excluded — already enabled in migration 004); creates helper functions `requesting_user_clerk_id()` and `requesting_user_role()` using `auth.jwt()->>'sub'` and `auth.jwt()->'metadata'->>'role'`; public SELECT on fish_species/seasons/delivery_zones/flight_windows/villages/inventory_availability; anon INSERT on fish_interest_votes/customer_feedback/delivery_demand_votes (critical — those APIs use anon key); user-specific SELECT on orders/customers/delivery_runs/delivery_stops; admin ALL on all protected tables; supplier/driver scoped policies; approved-only SELECT on catch_batches/village_media
+
+### Architecture decisions
+- **`auth.jwt()->>'sub'` not `auth.uid()`** — Clerk user IDs are strings like `user_2abc...`, not UUIDs; `auth.uid()` returns UUID type and would break; `auth.jwt()->>'sub'` returns text matching `users.clerk_id`
+- **Anon INSERT policies on vote/feedback tables** — `/api/survey/vote`, `/api/feedback`, `/api/delivery-demand/vote` all use `createPublicSupabaseClient()` (anon key); without these policies enabling RLS would immediately break those APIs
+- **impact_stories excluded** — migration 004 already enables RLS + public read policy; migration 015 only adds the missing admin ALL policy, does not re-enable RLS (would error)
+- **Manual apply required** — migration file is schema source-of-truth but must be pasted into Supabase SQL Editor; the Supabase CLI `apply_migration` tool would need `supabase db push`
+
+### TODOs left in code
+- [ ] `supabase/migrations/015_rls_policies.sql` — MANUAL APPLY required in Supabase SQL Editor
+
+### Parking lot (deferred)
+- [ ] Clerk JWT → Supabase integration (issue #11) — required for user-specific RLS to enforce; add Clerk JWKS to Supabase JWT settings; until then service-role + WHERE clauses remain the security layer
+- [ ] Pass Clerk session token to Supabase browser client in buyer flows
+
+### Next session
+First task: Address issue #9 — delivery-proofs bucket is private but proof route uses `getPublicUrl()` (stored URLs will 404). Decision: make bucket public in Supabase Dashboard → Storage → delivery-proofs → Make Public, OR switch to `createSignedUrl()` for admin-only viewing.
+File to open: `src/app/api/driver/proof/route.ts`
+Context needed: The bucket was created as private in migration 005. The stored `url` in `delivery_proofs` table uses `getPublicUrl()` which returns a URL that 404s on a private bucket. Easiest fix: flip bucket to public (proof photos are only admin-viewable anyway). Harder fix: store just the path and generate signed URLs on demand via a new GET endpoint.
+
+---
+
 ## Known Issues
 
 ### #6 — RESOLVED: /order/success auth-gated — breaks Stripe redirect
