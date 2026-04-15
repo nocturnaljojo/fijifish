@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-15 (Sessions R–T — driver portal + admin delivery run assignment + RLS policies)
+Last updated: 2026-04-15 (Sessions R–U — driver portal + delivery assignment + RLS policies + Clerk JWT integration)
 
 ---
 
@@ -202,7 +202,8 @@ Last updated: 2026-04-15 (Sessions R–T — driver portal + admin delivery run 
 
 | File | Status | Notes |
 |------|--------|-------|
-| `src/lib/supabase.ts` | LIVE | Three clients: public/browser/server |
+| `src/lib/supabase.ts` | LIVE | Four clients: public/browser/server/user (Clerk JWT) |
+| `src/lib/supabase-auth.ts` | LIVE | `getSupabaseUser()` — server helper, returns user-scoped Supabase client via Clerk JWT |
 | `src/lib/roles.ts` | LIVE | getUserRole, requireRole, getVillageId |
 | `src/lib/roles-client.ts` | LIVE | useRole() hook |
 | `src/lib/pricing.ts` | LIVE | AUD/FJD detection, isAustralian() |
@@ -249,12 +250,15 @@ Migration 015 written with full RLS coverage on all 24 tables. **MANUAL APPLY RE
 Public SELECT policies work immediately (anon key). User-specific policies (orders, customers) require Clerk JWT → Supabase configuration (see #11 below).
 
 **#11 — Pending manual config: Clerk JWT → Supabase integration**
-`requesting_user_clerk_id()` helper in migration 015 reads `auth.jwt()->>'sub'` to identify the logged-in user.
-This only works after Clerk is configured as a JWT provider in Supabase:
-1. Supabase Dashboard → Authentication → JWT Settings → Add provider
-2. Add Clerk JWKS endpoint: `https://[your-clerk-domain]/.well-known/jwks.json`
-3. Pass the Clerk session token to Supabase client in buyer-facing flows (getToken from useAuth, pass as Authorization header)
-Until configured: user-specific RLS policies are effectively open; service-role + explicit WHERE clauses remain the security layer for admin/driver/supplier routes.
+Code is wired up — `getSupabaseUser()` in `src/lib/supabase-auth.ts` calls `getToken({ template: 'supabase' })` and passes the JWT to Supabase via Authorization header. Two manual config steps still required:
+1. **Clerk Dashboard → JWT Templates → Create template named "supabase":**
+   ```json
+   { "role": "authenticated", "sub": "{{user.id}}", "email": "{{user.primary_email_address}}", "metadata": {{user.public_metadata}} }
+   ```
+   Audience: your Supabase project URL (e.g. `https://xxxx.supabase.co`)
+2. **Supabase Dashboard → Authentication → Third-party Auth → Add OIDC provider:**
+   Provider URL: your Clerk frontend API domain (e.g. `https://welcomed-roughy-12.clerk.accounts.dev`)
+Until step 1 is done: `getToken()` returns null → server throws → pages won't load for logged-in buyers/drivers/suppliers. Do the Clerk step first.
 
 **#9 — delivery-proofs bucket is private but proof route uses getPublicUrl()**
 Migration 005 created the `delivery-proofs` bucket as **private** (5MB, no public access). The proof API route calls `supabase.storage.from("delivery-proofs").getPublicUrl(filename)` which returns a URL but it will return 400 for unauthenticated requests on a private bucket.

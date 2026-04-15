@@ -6,6 +6,38 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session U — 2026-04-15 — Security: Clerk JWT → Supabase integration (closes #11)
+
+### Goal
+Wire up Clerk JWTs into Supabase client so RLS policies in migration 015 actually enforce for buyer/supplier/driver pages. Admin pages and webhooks keep service role.
+
+### What we built
+- `src/lib/supabase.ts` — added `createUserSupabaseClient(clerkToken)`: anon key + `Authorization: Bearer <token>` header; full setup JSDoc with exact Clerk/Supabase config steps
+- `src/lib/supabase-auth.ts` — `getSupabaseUser()`: calls `auth().getToken({ template: 'supabase' })`, throws with clear instructions if template not configured
+- Migrated 13 pages from `createServerSupabaseClient()` to `getSupabaseUser()`:
+  - Buyer: `dashboard/page.tsx`, `dashboard/account/page.tsx`, `dashboard/tracking/[orderId]/page.tsx`, `account/page.tsx`
+  - Supplier: `supplier/page.tsx`, `supplier/photos/page.tsx`, `supplier/tracking/page.tsx`, `supplier/history/page.tsx`
+  - Driver: `driver/page.tsx`, `driver/deliver/[stopId]/page.tsx`, `driver/history/page.tsx`
+- `supplier/layout.tsx` — switched from service role to `createPublicSupabaseClient()` (only queries `villages` which is anon-SELECT public)
+- `.env.example` — documented the two manual config steps with exact template JSON
+
+### Architecture decisions
+- **`getToken({ template: 'supabase' })`** — Clerk's JWT template approach; token contains `role: "authenticated"` so Supabase `TO authenticated` policies match; `sub: "{{user.id}}"` so `requesting_user_clerk_id()` returns the Clerk user ID; `metadata: {{user.public_metadata}}` so `requesting_user_role()` returns the role
+- **Throws on null token, not redirects** — all 13 pages already check `userId` before calling `getSupabaseUser()`. If the template isn't configured yet, pages throw a server error with a clear message rather than silently falling through
+- **Admin pages stay on service role** — 28 remaining `createServerSupabaseClient()` calls are all `/admin/*` pages and `/api/*` routes (webhooks, admin APIs, driver/supplier APIs); these intentionally bypass RLS
+- **`supplier/layout.tsx` uses public client** — layout only reads `villages.name` for the header; anon SELECT policy allows this; no JWT needed, avoids auth() call in layout
+
+### TODOs left in code (manual steps)
+- [ ] Clerk Dashboard → JWT Templates → Create "supabase" template — **DO THIS FIRST** or buyer/supplier/driver pages will throw
+- [ ] Supabase Dashboard → Authentication → Third-party Auth → Add OIDC provider (Clerk frontend API URL) — required for Supabase to verify the JWT
+
+### Next session
+First task: Address issue #9 — `delivery-proofs` bucket is private but `getPublicUrl()` stores URLs that 404. Decision needed: make bucket public OR switch to signed URLs.
+File to open: `src/app/api/driver/proof/route.ts`
+Context needed: The bucket was created as private in migration 005. The `delivery_proofs.url` column stores `getPublicUrl()` output which 404s on a private bucket. Easiest fix: Supabase Dashboard → Storage → delivery-proofs → Make Public (proof photos are admin-only anyway). Alternative: store storage path only, serve via signed URL GET endpoint.
+
+---
+
 ## Session T — 2026-04-15 — Security: RLS policies on all tables (closes #8)
 
 ### Goal
