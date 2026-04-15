@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -8,7 +8,7 @@ async function getHistory() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   const { data: user } = await supabase
     .from("users")

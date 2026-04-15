@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getVillageId } from "@/lib/roles";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import { getFlightWindowStatus } from "@/lib/flight-window-state";
 import InventoryManager, {
   type SupplierInventoryRow,
@@ -28,7 +28,7 @@ export default async function SupplierDashboardPage() {
   if (!userId) redirect("/sign-in?redirect_url=/supplier");
 
   const villageId = await getVillageId();
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Fetch the next active or upcoming flight window
   const { data: windowRows } = await supabase

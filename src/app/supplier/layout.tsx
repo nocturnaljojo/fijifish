@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserRole, getVillageId } from "@/lib/roles";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createPublicSupabaseClient } from "@/lib/supabase";
 import { SignOutButton } from "@clerk/nextjs";
 import SupplierNav from "@/components/supplier/SupplierNav";
 
@@ -38,7 +38,7 @@ export default async function SupplierLayout({
 
   if (villageId) {
     try {
-      const supabase = createServerSupabaseClient();
+      const supabase = createPublicSupabaseClient();
       const { data } = await supabase
         .from("villages")
         .select("name")

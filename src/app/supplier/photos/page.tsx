@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getVillageId } from "@/lib/roles";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import PhotoUploadForm, { type SpeciesOption } from "@/components/supplier/PhotoUploadForm";
 
 export const metadata = { title: "Catch Photos — Supplier Portal" };
@@ -19,7 +19,7 @@ export default async function SupplierPhotosPage() {
   if (!userId) redirect("/sign-in?redirect_url=/supplier/photos");
 
   const villageId = await getVillageId();
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Fetch active / upcoming window for the upload form
   const { data: windowRows } = await supabase

@@ -53,6 +53,41 @@ export function createBrowserSupabaseClient(): SupabaseClient {
 }
 
 /**
+ * User-scoped client — anon key + Clerk JWT in Authorization header.
+ * RLS policies apply: the logged-in user can only read/write their own data.
+ *
+ * SETUP REQUIRED before RLS enforces user-level access:
+ *   1. Clerk Dashboard → JWT Templates → Create template named "supabase":
+ *        {
+ *          "role": "authenticated",
+ *          "sub": "{{user.id}}",
+ *          "email": "{{user.primary_email_address}}",
+ *          "metadata": {{user.public_metadata}}
+ *        }
+ *        Set audience to your Supabase project URL.
+ *   2. Supabase Dashboard → Authentication → Third-party Auth → Add OIDC provider:
+ *        Provider URL: https://<your-clerk-frontend-api-domain>
+ *        (e.g. https://welcomed-roughy-12.clerk.accounts.dev)
+ *        This lets Supabase verify Clerk JWTs via JWKS.
+ *
+ * Until configured: user-specific RLS policies return empty rows (not errors).
+ * Service role routes (admin/webhooks) are unaffected — they bypass RLS entirely.
+ *
+ * Use via getSupabaseUser() from src/lib/supabase-auth.ts (handles token retrieval).
+ */
+export function createUserSupabaseClient(clerkToken: string): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    );
+  }
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${clerkToken}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/**
  * Admin/webhook only — service role key, BYPASSES RLS.
  * NEVER use for public page data fetching.
  */

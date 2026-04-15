@@ -1,6 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import AccountContent, { type AccountOrder, type AccountOrderItem, type VotedFish } from "./AccountContent";
 
 export const metadata = { title: "My Account — FijiFish" };
@@ -13,7 +13,7 @@ export default async function AccountPage() {
   const email = clerkUser?.emailAddresses[0]?.emailAddress ?? null;
   const fullName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") || null;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // ── Look up DB user ────────────────────────────────────────────────────────
   const { data: dbUser } = await supabase

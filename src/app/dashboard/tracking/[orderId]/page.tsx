@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 
 export const metadata = { title: "Track Your Order — FijiFish" };
 
@@ -41,7 +41,7 @@ export default async function OrderTrackingPage({
   const { userId } = await auth();
   if (!userId) redirect(`/sign-in?redirect_url=/dashboard/tracking/${orderId}`);
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Resolve buyer's customer id
   const { data: dbUser } = await supabase

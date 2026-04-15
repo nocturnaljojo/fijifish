@@ -1,6 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 
 export const metadata = { title: "Account — FijiFish" };
 
@@ -13,7 +13,7 @@ export default async function DashboardAccountPage() {
   const fullName =
     [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") || null;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   const { data: dbUser } = await supabase
     .from("users")

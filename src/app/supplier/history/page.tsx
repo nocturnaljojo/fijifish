@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getVillageId } from "@/lib/roles";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 
 export const metadata = { title: "History — Supplier Portal" };
 
@@ -70,7 +70,7 @@ export default async function SupplierHistoryPage() {
     );
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Fetch all inventory rows for this village, newest window first
   const { data: invRows } = await supabase

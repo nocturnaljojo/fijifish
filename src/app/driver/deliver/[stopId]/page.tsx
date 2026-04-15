@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import DeliveryProofForm, { type StopData } from "./DeliveryProofForm";
@@ -9,7 +9,7 @@ async function getStopData(stopId: string): Promise<StopData> {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   const { data: raw } = await supabase
     .from("delivery_stops")

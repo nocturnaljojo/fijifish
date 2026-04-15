@@ -3,9 +3,7 @@
  * Server component: fetches all orders for the authenticated buyer.
  *
  * Query path: Clerk userId → users.clerk_id → customers.user_id → orders.customer_id
- *
- * TODO: Add RLS policy `orders: buyer can only see their own rows` (Phase 1b).
- * Until then, service role + explicit WHERE clause provides the same security guarantee.
+ * RLS enforcement: user client passes Clerk JWT → auth.jwt()->>'sub' matches users.clerk_id.
  */
 
 export const dynamic = "force-dynamic";
@@ -14,7 +12,7 @@ export const revalidate = 0;
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import { getFlightWindowStatus } from "@/lib/flight-window-state";
 import OrderCard, { type DashboardOrder } from "@/components/dashboard/OrderCard";
 import type { FlightWindowStatus } from "@/types/database";
@@ -53,7 +51,7 @@ type RawOrder = {
 };
 
 async function fetchOrders(userId: string): Promise<DashboardOrder[]> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Step 1: resolve DB user id
   const { data: dbUser } = await supabase

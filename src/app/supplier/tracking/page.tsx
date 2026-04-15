@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getVillageId } from "@/lib/roles";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { getSupabaseUser } from "@/lib/supabase-auth";
 import SupplierTrackingForm from "./SupplierTrackingForm";
 
 export const metadata = { title: "Tracking — Supplier Portal" };
@@ -27,7 +27,7 @@ export default async function SupplierTrackingPage() {
   if (!userId) redirect("/sign-in?redirect_url=/supplier/tracking");
 
   const villageId = await getVillageId();
-  const supabase = createServerSupabaseClient();
+  const supabase = await getSupabaseUser();
 
   // Fetch the active/upcoming flight window
   const { data: windowRows } = await supabase
