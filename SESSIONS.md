@@ -38,6 +38,40 @@ Role-based middleware and `getUserRole()` require Clerk to include `publicMetada
 
 ---
 
+## Session S — 2026-04-15 — Phase 3: Admin delivery run assignment (closes #10)
+
+### Goal
+Build the admin UI to create delivery runs, auto-populate stops from paid orders, assign a driver, set stop sequence — so the driver portal has real data without manual SQL inserts.
+
+### What we built
+- `src/app/api/admin/deliveries/route.ts` — POST: validate admin + window state (closed+) + active driver; create `delivery_runs` row; bulk insert `delivery_stops`; link `orders.delivery_run_id`; GET: list all runs with stop progress counts
+- `src/app/admin/deliveries/page.tsx` — list all runs grouped by flight window; status badge, progress bar, driver name; "Create New Run" CTAs for each assignable window (closed / packing / shipped / in_transit / landed / customs / delivering)
+- `src/app/admin/deliveries/create/[windowId]/page.tsx` — server component: fetch window info, active drivers, paid/confirmed unassigned orders (delivery_run_id IS NULL); normalise Supabase joins; sort stops by state → zone name → address; detect communal groups (same delivery_address across 2+ orders → shared communal_group_id)
+- `src/app/admin/deliveries/create/[windowId]/CreateRunForm.tsx` — client form: driver dropdown; stop table with editable sequence number inputs (re-sort on change), communal stops highlighted amber; summary card (stops / communal / total kg); submit → POST /api/admin/deliveries → redirect to /admin/deliveries
+- `src/components/admin/AdminSidebar.tsx` — added "Deliveries" nav item (🚛) after Tracking
+- `src/app/admin/windows/WindowForm.tsx` — added "Assign Delivery" Link button in WindowRow for closed/packing/shipped/in_transit/landed/customs/delivering statuses
+
+### Architecture decisions
+- **Communal grouping by address string match** — orders sharing exact (trimmed, lowercased) delivery_address get the same `communal_group_id`; each order still gets its own `delivery_stop` row so order tracking works per-order; the `is_communal` flag signals the driver to handle them together at one visit
+- **Default sort: state → zone name → address** — groups deliveries by region before suburb; gives a natural route shape without the unbuilt route optimiser
+- **Sequence number editable inputs** — simplest reordering mechanism; state re-sorts on each change so the list stays visually ordered; no drag-and-drop library needed
+- **Window validation at API level** — POST returns 422 if window is open/upcoming/cancelled (fish not en route yet); closed+ means admin has confirmed orders and can assign delivery
+- **`delivery_run_id` written to orders** — keeps `orders.delivery_run_id` in sync so the Order type's FK is populated; non-fatal if it fails (run + stops already created)
+
+### TODOs left in code
+- [ ] `delivery-proofs` bucket is private — `getPublicUrl()` in proof route will 404; need to make bucket public or switch to signed URLs (issue #9)
+
+### Parking lot (deferred)
+- [ ] Route optimisation — `src/lib/route-optimiser.ts` not built; admin sets sequence manually
+- [ ] Driver escalation flow — escalated stop status has no UI action
+- [ ] Edit/cancel a planned delivery run — no UI to undo a run once created
+
+### Next session
+First task: Address issue #9 — delivery-proofs bucket is private but proof route uses getPublicUrl(). Decision: make bucket public in Supabase Dashboard (admin-only access is still enforced server-side) OR create a GET /api/admin/proofs/[stopId] signed-URL endpoint for admin viewing.
+Context needed: The `delivery-proofs` bucket was created as private in migration 005. The proof API stores `publicUrl` in DB. Fix is straightforward — either flip bucket to public or store path and serve via signed URL.
+
+---
+
 ## Session R — 2026-04-15 — Phase 3: Driver portal
 
 ### Goal

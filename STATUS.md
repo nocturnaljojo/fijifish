@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-15 (Session R — driver portal: delivery runs, proof capture, GPS logging, history, admin active deliveries)
+Last updated: 2026-04-15 (Sessions R–S — driver portal + admin delivery run assignment)
 
 ---
 
@@ -38,6 +38,8 @@ Last updated: 2026-04-15 (Session R — driver portal: delivery runs, proof capt
 | `/supplier/photos` | Catch photo upload + photo list | LIVE |
 | `/supplier/tracking` | Post caught/processing/packed/at_airport updates with photos | LIVE |
 | `/supplier/history` | Past flight windows | LIVE |
+| `/admin/deliveries` | Delivery run list — grouped by window, progress bar, create CTA | LIVE |
+| `/admin/deliveries/create/[windowId]` | Create delivery run — driver select, stop table, sequence inputs, communal detection | LIVE |
 | `/driver` | Driver portal — today's run, start/stop controls, per-stop actions | LIVE |
 | `/driver/deliver/[stopId]` | Delivery proof capture — camera, GPS, received-by, proxy flag | LIVE |
 | `/driver/history` | Past completed runs, expandable stop detail + proof photos | LIVE |
@@ -65,6 +67,7 @@ Last updated: 2026-04-15 (Session R — driver portal: delivery runs, proof capt
 | POST `/api/checkout` | LIVE | Cart → Stripe checkout session |
 | POST `/api/webhooks/clerk` | LIVE | user.created/updated/deleted → Supabase users + customers sync; svix sig verification |
 | POST `/api/webhooks/stripe` | LIVE | checkout.session.completed + payment_failed + charge.refunded; capacity management |
+| GET/POST `/api/admin/deliveries` | LIVE | GET: list all runs with progress; POST: create delivery_run + delivery_stops + link orders |
 | GET `/api/driver` | LIVE | Active/planned run + stops + order items for current driver |
 | PATCH `/api/driver` | LIVE | start_run / complete_run / mark_arrived / mark_delivered / skip_stop |
 | POST `/api/driver/proof` | LIVE | Upload proof photo to delivery-proofs bucket + insert delivery_proofs row |
@@ -249,9 +252,8 @@ Migration 005 created the `delivery-proofs` bucket as **private** (5MB, no publi
 To fix: either (a) change the bucket to public in Supabase Dashboard → Storage → delivery-proofs → Make Public, or (b) switch to `createSignedUrl()` for time-limited access. Decision: make public if proof photos are only admin-accessible anyway, or use signed URLs for privacy.
 Risk: low (no buyers see these photos yet), but proof photo URLs stored in DB will 404 for anyone.
 
-**#10 — No admin UI to create delivery runs**
-`delivery_runs` and `delivery_stops` exist in the schema and the driver portal reads them, but there is no admin page to create runs or assign drivers. Runs must be manually inserted via Supabase SQL Editor.
-To fix: Build admin run assignment page — create run for a flight window, auto-populate stops from paid orders, assign driver.
+**#10 — RESOLVED: Admin delivery run assignment built (Session S, 2026-04-15)**
+`/admin/deliveries` and `/admin/deliveries/create/[windowId]` now live. Driver portal reads from real DB rows.
 
 **Resolved:**
 - #3 — Clerk session token: `{ "metadata": "{{user.public_metadata}}" }` set in Clerk Dashboard (2026-04-14)
