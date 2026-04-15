@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/admin/windows", label: "Flight Windows", icon: "✈️" },
   { href: "/admin/orders", label: "Orders", icon: "📦" },
   { href: "/admin/tracking", label: "Tracking", icon: "🚚" },
+  { href: "/admin/deliveries", label: "Deliveries", icon: "🚛" },
   { href: "/admin/pricing", label: "Fish & Pricing", icon: "🐟" },
   { href: "/admin/photos", label: "Catch Photos", icon: "📷" },
   { href: "/admin/stories", label: "Impact Stories", icon: "🌿" },

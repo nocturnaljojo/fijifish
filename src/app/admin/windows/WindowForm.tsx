@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   markAsPacking,
   markAsShipped,
@@ -241,6 +242,20 @@ export function WindowRow({ window: w }: { window: WindowRow }) {
   }
   if (s === "delivering") {
     actions.push(btn("Mark Delivered", () => markAsDelivered(w.id), green));
+  }
+
+  // Assign delivery run — available from closed onward
+  const deliveryStatuses = ["closed", "packing", "shipped", "in_transit", "landed", "customs", "delivering"];
+  if (deliveryStatuses.includes(s)) {
+    actions.push(
+      <Link
+        key="assign-delivery"
+        href={`/admin/deliveries/create/${w.id}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono ${teal}`}
+      >
+        🚛 Assign Delivery
+      </Link>
+    );
   }
 
   // Cancel — available on any non-terminal state
