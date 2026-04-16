@@ -1,15 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-const STEPS = [
+const NORMAL_STEPS = [
   { icon: "✅", label: "Order placed", done: true },
   { icon: "🎣", label: "Fishermen catching your order in Bua Province", done: false },
   { icon: "✈️", label: "Air-freighted to Sydney via Fiji Airways", done: false },
-  { icon: "🚚", label: "Delivered to your door Thursday", done: false },
+  { icon: "🚚", label: "Delivered to your door", done: false },
 ];
 
-export default function OrderSuccessPage() {
+const PREORDER_STEPS = [
+  { icon: "✅", label: "Pre-order confirmed — payment received", done: true },
+  { icon: "🗓️", label: "Waiting for catch window to open", done: false },
+  { icon: "🎣", label: "Fish caught fresh to your order", done: false },
+  { icon: "✈️", label: "Air-freighted to Sydney via Fiji Airways", done: false },
+  { icon: "🚚", label: "Delivered to your door", done: false },
+];
+
+function OrderSuccessContent() {
+  const params = useSearchParams();
+  const isPreOrder = params.get("preorder") === "true";
+
+  const steps = isPreOrder ? PREORDER_STEPS : NORMAL_STEPS;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16" style={{ background: "var(--bg-primary, #0a0f1a)" }}>
       <div className="max-w-lg w-full space-y-8">
@@ -17,10 +32,12 @@ export default function OrderSuccessPage() {
         <div className="text-center">
           <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
-            Order Confirmed!
+            {isPreOrder ? "Pre-order Confirmed!" : "Order Confirmed!"}
           </h1>
           <p className="text-text-secondary text-base leading-relaxed">
-            Your Walu is being caught fresh right now. You&apos;ll receive delivery updates via email.
+            {isPreOrder
+              ? "Your catch is reserved. Your fish will be caught fresh when the window opens — we'll send updates by email."
+              : "Your Walu is being caught fresh right now. You'll receive delivery updates via email."}
           </p>
         </div>
 
@@ -30,7 +47,7 @@ export default function OrderSuccessPage() {
             <h2 className="text-xs font-mono text-text-secondary uppercase tracking-wider">What Happens Next</h2>
           </div>
           <ol className="divide-y divide-white/5">
-            {STEPS.map((step, i) => (
+            {steps.map((step, i) => (
               <li key={i} className="flex items-start gap-4 px-5 py-4">
                 <span className="text-xl shrink-0" aria-hidden="true">{step.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -74,5 +91,17 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-primary, #0a0f1a)" }}>
+        <div className="text-text-secondary text-sm font-mono">Loading…</div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

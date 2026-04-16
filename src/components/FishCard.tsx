@@ -20,6 +20,8 @@ export interface FishCardData {
   available_kg: number;
   total_kg: number;
   village_name?: string;
+  /** False when admin hasn't set inventory for the next window yet — hides capacity bar */
+  hasInventory?: boolean;
 }
 
 function formatPrice(cents: number): string {
@@ -55,14 +57,21 @@ function HeroFishCard({
   orderCloseAt,
   windowStatus,
   orderOpenAt,
+  isPreOrderMode,
+  flightDate,
+  hasNoWindow,
 }: {
   fish: FishCardData;
   orderCloseAt: number;
   windowStatus: FlightWindowStatus;
   orderOpenAt: string | null;
+  isPreOrderMode: boolean;
+  flightDate: string | null;
+  hasNoWindow: boolean;
 }) {
   const isSoldOut = fish.available_kg <= 0;
   const canOrder = (windowStatus === "open" || windowStatus === "closing_soon") && !isSoldOut;
+  const canPreOrder = isPreOrderMode && !isSoldOut && (fish.hasInventory !== false);
   const { addItem, openCart, items } = useCart();
   const [justAdded, setJustAdded] = useState(false);
   const [isNonAU, setIsNonAU] = useState(false);
@@ -171,9 +180,15 @@ function HeroFishCard({
             </p>
           </div>
 
-          <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
+          {fish.hasInventory !== false ? (
+            <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
+          ) : isPreOrderMode ? (
+            <p className="text-xs font-mono text-text-secondary italic">
+              Quantities confirmed soon
+            </p>
+          ) : null}
 
-          {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && (
+          {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && fish.hasInventory !== false && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide bg-reef-coral/10 border border-reef-coral/25 text-reef-coral w-fit">
               Only {Math.round(fish.available_kg)}kg left!
             </span>
@@ -210,6 +225,38 @@ function HeroFishCard({
               >
                 Available in Australia only
               </button>
+            ) : hasNoWindow ? (
+              <a
+                href="#notify"
+                className="block w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] text-center bg-bg-secondary text-ocean-teal border border-ocean-teal/30 hover:bg-ocean-teal/5 transition-colors"
+              >
+                Notify Me
+              </a>
+            ) : canPreOrder ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className={`w-full py-3.5 px-4 rounded-xl font-bold text-base min-h-[56px] transition-all ${
+                    justAdded
+                      ? "bg-lagoon-green text-bg-primary"
+                      : inCart
+                      ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
+                      : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
+                  }`}
+                >
+                  {justAdded
+                    ? "✅ Pre-order confirmed!"
+                    : inCart
+                    ? "In Cart — Add Another kg"
+                    : `Pre-order — ${formatPrice(fish.price_aud_cents)}/kg`}
+                </button>
+                {flightDate && (
+                  <p className="text-xs text-ocean-teal/80 text-center font-mono">
+                    🗓️ For {new Date(flightDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })} delivery
+                  </p>
+                )}
+              </>
             ) : (
               <>
                 <button
@@ -257,17 +304,23 @@ export default function FishCard({
   isHero = false,
   index = 0,
   orderCloseAt,
+  isPreOrderMode: isPreOrderModeProp,
+  flightDate: flightDateProp,
 }: {
   fish: FishCardData;
   isHero?: boolean;
   index?: number;
   orderCloseAt?: number;
+  /** Server-side pre-order mode flag — hook value overrides this once loaded */
+  isPreOrderMode?: boolean;
+  /** Flight date string (YYYY-MM-DD) for pre-order delivery label */
+  flightDate?: string | null;
 }) {
   const closeAt = orderCloseAt ?? FLIGHT_CONFIG.orderCloseAt;
 
   // Hooks must be called unconditionally before any early returns
   const { addItem, openCart, items } = useCart();
-  const { status: windowStatus, currentWindow } = useFlightWindow();
+  const { status: windowStatus, currentWindow, shoppableWindow, isPreOrderMode: hookPreOrder } = useFlightWindow();
   const [justAdded, setJustAdded] = useState(false);
   const [isNonAU, setIsNonAU] = useState(false);
 
@@ -284,6 +337,12 @@ export default function FishCard({
   const inCart = items.some((i) => i.fishSpeciesId === fish.id);
   const orderOpenAt = currentWindow?.order_open_at ?? null;
 
+  // Use hook value once loaded (loading=false), fall back to server prop while loading
+  const isPreOrderMode = hookPreOrder || (isPreOrderModeProp ?? false);
+  const flightDate = shoppableWindow?.flight_date ?? flightDateProp ?? null;
+  const hasNoWindow = !shoppableWindow && !canOrder && !isPreOrderMode;
+  const canPreOrder = isPreOrderMode && !isSoldOut && fish.hasInventory !== false;
+
   if (isHero) {
     return (
       <motion.div
@@ -298,6 +357,9 @@ export default function FishCard({
           orderCloseAt={closeAt}
           windowStatus={windowStatus}
           orderOpenAt={orderOpenAt}
+          isPreOrderMode={isPreOrderMode}
+          flightDate={flightDate}
+          hasNoWindow={hasNoWindow}
         />
       </motion.div>
     );
@@ -380,9 +442,15 @@ export default function FishCard({
           </p>
         </div>
 
-        <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
+        {fish.hasInventory !== false ? (
+          <CapacityBar availableKg={fish.available_kg} totalKg={fish.total_kg} />
+        ) : isPreOrderMode ? (
+          <p className="text-xs font-mono text-text-secondary italic">
+            Quantities confirmed soon
+          </p>
+        ) : null}
 
-        {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && (
+        {!isSoldOut && fish.available_kg > 0 && fish.available_kg <= 5 && fish.hasInventory !== false && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide bg-reef-coral/10 border border-reef-coral/25 text-reef-coral w-fit">
             Only {Math.round(fish.available_kg)}kg left!
           </span>
@@ -414,6 +482,13 @@ export default function FishCard({
             >
               Available in Australia only
             </button>
+          ) : hasNoWindow ? (
+            <a
+              href="#notify"
+              className="block w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] text-center bg-bg-secondary text-ocean-teal border border-ocean-teal/30 hover:bg-ocean-teal/5 transition-colors"
+            >
+              Notify Me
+            </a>
           ) : isSoldOut ? (
             <div className="space-y-2">
               <button
@@ -430,6 +505,27 @@ export default function FishCard({
                 Notify me next flight
               </button>
             </div>
+          ) : canPreOrder ? (
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className={`w-full py-3 px-4 rounded-lg font-semibold text-sm min-h-[48px] transition-all ${
+                  justAdded
+                    ? "bg-lagoon-green text-bg-primary"
+                    : inCart
+                    ? "bg-ocean-teal/80 text-bg-primary hover:opacity-90"
+                    : "bg-ocean-teal text-bg-primary hover:opacity-90 active:scale-[0.98]"
+                }`}
+              >
+                {justAdded ? "✅ Pre-order confirmed!" : inCart ? "In Cart — Add Another" : "Pre-order"}
+              </button>
+              {flightDate && (
+                <p className="text-xs text-ocean-teal/80 text-center font-mono">
+                  🗓️ For {new Date(flightDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })} delivery
+                </p>
+              )}
+            </div>
           ) : canOrder ? (
             <div className="space-y-1.5">
               <button
@@ -445,7 +541,7 @@ export default function FishCard({
               >
                 {justAdded ? "✅ Added!" : inCart ? "In Cart — Add Another" : "Order Now"}
               </button>
-              {fish.available_kg < fish.total_kg * (THRESHOLDS.cargoFillingFast / 100) && (
+              {fish.available_kg < fish.total_kg * (THRESHOLDS.cargoFillingFast / 100) && fish.hasInventory !== false && (
                 <p className="text-xs text-text-secondary text-center font-mono">
                   Limited cargo space remaining
                 </p>

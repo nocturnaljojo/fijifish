@@ -54,18 +54,48 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   const supabase = createServerSupabaseClient();
 
-  // ── Get active flight window ──────────────────────────────────────────────
+  // ── Get shoppable flight window ───────────────────────────────────────────
+  // Accepts open/closing_soon windows (normal) AND upcoming windows (pre-order mode).
+  // Uses timestamp logic so it's independent of whatever status value the DB holds.
 
-  const { data: window } = await supabase
+  const now = new Date().toISOString();
+
+  // 1. Currently-open window (order_open_at in past, order_close_at in future)
+  const { data: openWindow } = await supabase
     .from("flight_windows")
-    .select("id, flight_date, order_close_at")
-    .in("status", ["open", "closing_soon"])
+    .select("id, flight_date, order_close_at, order_open_at")
+    .lte("order_open_at", now)
+    .gt("order_close_at", now)
+    .neq("status", "packing")
+    .neq("status", "shipped")
+    .neq("status", "in_transit")
+    .neq("status", "landed")
+    .neq("status", "customs")
+    .neq("status", "delivering")
+    .neq("status", "delivered")
+    .neq("status", "cancelled")
     .order("order_close_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
+  // 2. Fall back to upcoming window (pre-order mode)
+  const { data: upcomingWindow } = !openWindow
+    ? await supabase
+        .from("flight_windows")
+        .select("id, flight_date, order_close_at, order_open_at")
+        .gt("order_open_at", now)
+        .neq("status", "delivered")
+        .neq("status", "cancelled")
+        .order("order_open_at", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+
+  const window = openWindow ?? upcomingWindow;
+  const isPreOrder = !openWindow && !!upcomingWindow;
+
   if (!window) {
-    return errorResponse("No active flight window. Orders are currently closed.", 409);
+    return errorResponse("No flight window available. Orders are currently closed.", 409);
   }
 
   // ── Validate inventory — prices, availability, village ────────────────────
@@ -230,7 +260,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
         quantity: 1,
       };
     }),
-    success_url: `${appUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${appUrl}/order/success?session_id={CHECKOUT_SESSION_ID}${isPreOrder ? "&preorder=true" : ""}`,
     cancel_url: `${appUrl}/checkout?cancelled=true`,
     metadata: {
       order_id: order.id,

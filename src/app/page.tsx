@@ -5,11 +5,13 @@ export const revalidate = 0;
 import { auth } from "@clerk/nextjs/server";
 import { createPublicSupabaseClient } from "@/lib/supabase";
 import {
+  getShoppableWindow,
   getActiveFlightWindow,
   getWindowInventory,
   calcCargoPercent,
   type InventoryRow,
 } from "@/lib/flight-windows";
+import NotifyMeForm from "@/components/NotifyMeForm";
 import { FLIGHT_CONFIG, CARGO_CONFIG } from "@/lib/config";
 import Navbar from "@/components/Navbar";
 import DeliveryBanner from "@/components/DeliveryBanner";
@@ -91,20 +93,22 @@ function resolveInventory(
   nameFijian: string | null,
   nameEnglish: string,
   dbInventory: InventoryRow[],
-): { price_aud_cents: number; available_kg: number; total_kg: number } {
+): { price_aud_cents: number; available_kg: number; total_kg: number; hasInventory: boolean } {
   const dbRow = dbInventory.find((r) => r.fish_species_id === fishId);
   if (dbRow) {
     return {
       price_aud_cents: dbRow.price_aud_cents,
       available_kg: Number(dbRow.available_kg),
       total_kg: Number(dbRow.total_capacity_kg),
+      hasInventory: true,
     };
   }
-  return (
-    (nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
-    TEST_INVENTORY[nameEnglish] ??
-    DEFAULT_INVENTORY
-  );
+  return {
+    ...((nameFijian ? TEST_INVENTORY[nameFijian] : undefined) ??
+      TEST_INVENTORY[nameEnglish] ??
+      DEFAULT_INVENTORY),
+    hasInventory: false,
+  };
 }
 
 function sortFish(fish: FishCardData[]): FishCardData[] {
@@ -213,11 +217,14 @@ export default async function Home() {
   const { userId } = await auth();
   const isSignedIn = !!userId;
 
-  // Fetch active flight window first — it drives capacity and countdown data
-  const activeWindow = await getActiveFlightWindow();
-  const dbInventory = activeWindow
-    ? await getWindowInventory(activeWindow.id)
+  // Fetch the shoppable window — open window, or next upcoming (pre-order mode), or null
+  const { window: shoppableWindow, isPreOrderMode } = await getShoppableWindow();
+  const dbInventory = shoppableWindow
+    ? await getWindowInventory(shoppableWindow.id)
     : [];
+
+  // Also fetch the active window for the delivery banner (post-order states)
+  const activeWindow = await getActiveFlightWindow();
 
   // Fetch the rest in parallel
   const [{ availableFish, lockedFish }, village, surveySpecies] = await Promise.all([
@@ -227,7 +234,9 @@ export default async function Home() {
   ]);
 
   // Resolve display values: prefer DB, fall back to config
-  const orderCloseAt = activeWindow
+  const orderCloseAt = shoppableWindow
+    ? new Date(shoppableWindow.order_close_at).getTime()
+    : activeWindow
     ? new Date(activeWindow.order_close_at).getTime()
     : FLIGHT_CONFIG.orderCloseAt;
 
@@ -259,16 +268,19 @@ export default async function Home() {
             <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5">
-                  In Season Now
+                  {isPreOrderMode ? "Pre-order Now" : "In Season Now"}
                 </h2>
                 <p className="text-text-secondary text-sm sm:text-base">
-                  Wild-caught from Pacific Island reefs — order before the
-                  flight window closes.
+                  {isPreOrderMode
+                    ? `Secure your catch for the ${shoppableWindow?.flight_date ? new Date(shoppableWindow.flight_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : "next"} flight. Pay now, fish caught fresh to order.`
+                    : !shoppableWindow
+                    ? "Wild-caught from Pacific Island reefs — be the first to know when the next window opens."
+                    : "Wild-caught from Pacific Island reefs — order before the flight window closes."}
                 </p>
               </div>
-              <span className="text-xs font-mono text-reef-coral border border-reef-coral/30 rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-reef-coral animate-pulse inline-block" aria-hidden="true" />
-                NEXT FLIGHT
+              <span className={`text-xs font-mono border rounded-full px-3 py-1 whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5 ${isPreOrderMode ? "text-ocean-teal border-ocean-teal/30" : "text-reef-coral border-reef-coral/30"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full inline-block ${isPreOrderMode ? "bg-ocean-teal animate-pulse" : "bg-reef-coral animate-pulse"}`} aria-hidden="true" />
+                {isPreOrderMode ? "PRE-ORDER OPEN" : "NEXT FLIGHT"}
               </span>
             </div>
 
@@ -300,9 +312,18 @@ export default async function Home() {
                       isHero={isWalu && i === 0}
                       index={i}
                       orderCloseAt={orderCloseAt}
+                      isPreOrderMode={isPreOrderMode}
+                      flightDate={shoppableWindow?.flight_date ?? null}
                     />
                   );
                 })}
+              </div>
+            )}
+
+            {/* Notify Me form — shown when no window is scheduled */}
+            {!shoppableWindow && (
+              <div id="notify" className="mt-10 scroll-mt-24">
+                <NotifyMeForm />
               </div>
             )}
           </div>

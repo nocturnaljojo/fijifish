@@ -66,8 +66,19 @@ function PostOrderMessage({ status, flightNumber }: { status: FlightWindowStatus
 
 // ── Main banner ───────────────────────────────────────────────────────────────
 
+function formatOpenAt(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Australia/Sydney",
+  });
+}
+
 export default function DeliveryBanner() {
-  const { currentWindow, status, loading } = useFlightWindow();
+  const { currentWindow, shoppableWindow, isPreOrderMode, status, loading } = useFlightWindow();
 
   const CARGO_PCT = CARGO_CONFIG.capacityPercent; // TODO: wire to inventory_availability in Phase 1b
 
@@ -92,6 +103,81 @@ export default function DeliveryBanner() {
       >
         <div className="max-w-6xl mx-auto px-4">
           <PostOrderMessage status={status} flightNumber={currentWindow.flight_number} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pre-order mode: upcoming window, no current open window ─────────────
+  if (!loading && isPreOrderMode && shoppableWindow) {
+    const flightLabel = shoppableWindow.flight_date
+      ? formatDate(shoppableWindow.flight_date + "T00:00:00")
+      : "Next flight";
+    const openLabel = formatOpenAt(shoppableWindow.order_open_at);
+    const openCountdown = new Date(shoppableWindow.order_open_at).getTime();
+    return (
+      <div
+        className="sticky top-0 z-50 border-b border-ocean-teal/20 backdrop-blur-md"
+        style={{ background: "rgba(10,15,26,0.97)" }}
+      >
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-stretch gap-0 divide-y md:divide-y-0 md:divide-x divide-ocean-teal/10 py-2 md:py-0">
+            <div className="flex items-center gap-2.5 md:py-3 md:pr-6">
+              <span className="text-lg" aria-hidden="true">🗓️</span>
+              <div>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-ocean-teal/60 leading-none mb-0.5">
+                  Pre-order — {flightLabel} Delivery
+                </p>
+                <p className="text-sm font-bold text-ocean-teal leading-none">
+                  Order now, fish caught fresh to order
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 md:py-3 md:pl-6 py-2">
+              <span
+                className="w-2 h-2 rounded-full bg-ocean-teal animate-pulse shrink-0"
+                aria-hidden="true"
+              />
+              <div>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-ocean-teal/60 leading-none mb-0.5">
+                  Order Window Opens
+                </p>
+                <CountdownTimer
+                  targetTimestamp={openCountdown}
+                  className="text-lg sm:text-xl font-bold leading-none"
+                  baseColor="text-ocean-teal"
+                  urgentColor="text-ocean-teal"
+                />
+              </div>
+            </div>
+            <div className="hidden md:flex items-center md:py-3 md:px-6">
+              <p className="text-xs font-mono text-text-secondary">
+                Opens {openLabel}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── No window at all ──────────────────────────────────────────────────────
+  if (!loading && !currentWindow && !shoppableWindow) {
+    return (
+      <div
+        className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md"
+        style={{ background: "rgba(10,15,26,0.97)" }}
+      >
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-3">
+            <span className="text-lg" aria-hidden="true">🌊</span>
+            <span className="text-sm font-semibold text-text-secondary">
+              Next delivery coming soon —{" "}
+              <a href="#notify" className="text-ocean-teal underline underline-offset-2">
+                get notified
+              </a>
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -131,7 +217,7 @@ export default function DeliveryBanner() {
     countdownTarget = new Date(currentWindow.order_close_at).getTime();
     isUrgent = true;
   } else {
-    // closed — show next window if we have date info
+    // closed — no shoppable window available
     leftLabel = "Orders Closed";
     leftValue = "Next window TBA";
     rightLabel = "Window Status";
