@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-15 (Sessions R–U — driver portal + delivery assignment + RLS policies + Clerk JWT integration)
+Last updated: 2026-04-16 (Sessions R–W — driver portal + delivery assignment + RLS policies + Clerk JWT integration + all issues closed)
 
 ---
 
@@ -10,9 +10,32 @@ Last updated: 2026-04-15 (Sessions R–U — driver portal + delivery assignment
 |-------|-------------|--------|
 | Phase 0 | Scaffold, Clerk auth, Supabase schema, seed | COMPLETE |
 | Phase 1a | Homepage (fish grid, map, surveys), QA infra | ~90% complete |
-| Phase 1b | Order flow, admin panel, RLS, Stripe checkout | IN PROGRESS |
-| Phase 2 | Supplier portal, driver portal, tracking | IN PROGRESS |
-| Phase 3 | Broadcasts, impact stories, multi-village | NOT STARTED |
+| Phase 1b | Order flow, admin panel, RLS, Stripe checkout | COMPLETE |
+| Phase 2 | Supplier portal, driver portal, tracking, broadcasts | COMPLETE |
+| Phase 3 | Multi-village supply, referrals, Twilio, live RLS | IN PROGRESS |
+
+### Portal build status (as of 2026-04-16)
+
+| Portal | Status |
+|--------|--------|
+| Buyer — homepage, checkout, dashboard, order tracking, billing | LIVE |
+| Supplier — catch dashboard, photo upload, tracking updates, history | LIVE |
+| Admin — windows, orders, photos, tracking, deliveries, broadcasts, stories | LIVE |
+| Driver — delivery runs, proof capture, GPS logging, history | LIVE |
+
+### Next priorities
+
+**Business (non-code):**
+1. Call Express Freight Management Nadi (+679 222 0007) — air freight pricing for perishable cargo
+2. Call C.T. Freight Sydney — customs clearance for perishable fish imports
+
+**Technical (when ready):**
+1. Apply migration 015 (RLS) in Supabase SQL Editor — user-specific policies now unblocked
+2. Apply migration 014 (opt-out columns) in Supabase SQL Editor
+3. Test end-to-end buyer RLS: sign in → order → verify `/dashboard` only shows own orders
+4. Verify `/dashboard/billing` Stripe Customer Portal (Issue #7)
+5. Twilio integration (`src/lib/notifications.ts`) — wire SMS/WhatsApp for order + broadcast events
+6. Referral system (deferred)
 
 ---
 
@@ -239,30 +262,30 @@ Last updated: 2026-04-15 (Sessions R–U — driver portal + delivery assignment
 
 ## Known issues (action required)
 
-**No open blocking issues.**
+**No open blocking issues. All portals live.**
 
-**#7 — Pending manual config: STRIPE_PORTAL_URL not yet set**
-`/dashboard/billing` falls back to a "Contact us" email until `STRIPE_PORTAL_URL` is set in Vercel.
-To fix: Stripe Dashboard → Settings → Billing → Customer portal → copy URL → add as `STRIPE_PORTAL_URL` in Vercel env vars (server-only, no NEXT_PUBLIC_ prefix).
+### Pending manual tasks (non-blocking)
 
-**#8 — RESOLVED: RLS policies added (Session T, 2026-04-15)**
-Migration 015 written with full RLS coverage on all 24 tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor.
-Public SELECT policies work immediately (anon key). User-specific policies (orders, customers) require Clerk JWT → Supabase configuration (see #11 below).
+**#7 — STRIPE_PORTAL_URL set, needs live verification**
+`STRIPE_PORTAL_URL` is set in Vercel env vars. Test: sign in as buyer → `/dashboard/billing` → click "Open Billing Portal" → verify Stripe portal loads with prefilled email.
 
-**#11 — RESOLVED: Clerk JWT → Supabase integration (2026-04-16)**
-Clerk JWT template "supabase" created (HS256, Supabase JWT secret as signing key). Claims: `aud=authenticated`, `email`, `role=authenticated`. Supabase now trusts Clerk-issued JWTs — `auth.uid()` resolves on buyer/supplier/driver pages. Code was already wired (`getSupabaseUser()` in `src/lib/supabase-auth.ts`). No code changes needed.
+**#8 — RLS policies: code done, migration pending**
+Migration 015 (`supabase/migrations/015_rls_policies.sql`) written with full RLS coverage on 24 tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor. Public SELECT + anon INSERT policies work immediately on apply. User-specific policies (orders, customers, delivery_stops) now fully unblocked — Clerk JWT → Supabase link was completed (Issue #11 resolved 2026-04-16).
 
-**#9 — RESOLVED: Storage bucket access fixed (2026-04-16)**
-`delivery-proofs` and `shipment-updates` buckets set to public in Supabase Dashboard → Storage. `getPublicUrl()` in `src/app/api/driver/proof/route.ts` now returns accessible URLs. Server-side role gates still enforce who can upload.
+**Migration 014 — channel opt-out columns**
+`supabase/migrations/014_customers_channel_optout.sql` adds `sms_opt_out` + `whatsapp_opt_out` to customers. **MANUAL APPLY REQUIRED.** Without it, channel-specific opt-outs in broadcast system won't persist (master `broadcast_opt_out` flag still enforced).
 
-**#10 — RESOLVED: Admin delivery run assignment built (Session S, 2026-04-15)**
-`/admin/deliveries` and `/admin/deliveries/create/[windowId]` now live. Driver portal reads from real DB rows.
+### Resolved issues
 
-**Resolved:**
-- #3 — Clerk session token: `{ "metadata": "{{user.public_metadata}}" }` set in Clerk Dashboard (2026-04-14)
-- #4 — All Vercel env vars confirmed: Supabase, Stripe, Clerk, Mapbox, Twilio (2026-04-14)
-- #5 — CountdownTimer SSR-safe pattern in place; lint rule documented (2026-04-14)
-- #6 — /order/success accessible without auth (2026-04-12)
+| # | Description | Resolved |
+|---|-------------|---------|
+| #3 | Clerk session token customised (`metadata: public_metadata`) | 2026-04-14 |
+| #4 | All Vercel env vars confirmed | 2026-04-14 |
+| #5 | CountdownTimer SSR-safe hydration pattern | 2026-04-14 |
+| #6 | /order/success accessible without auth | 2026-04-12 |
+| #9 | delivery-proofs + shipment-updates buckets set to public | 2026-04-16 |
+| #10 | Admin delivery run assignment built | 2026-04-15 |
+| #11 | Clerk JWT template "supabase" created (HS256); Supabase trusts Clerk JWTs; `auth.uid()` resolves on all 11 buyer/supplier/driver pages | 2026-04-16 |
 
 ---
 

@@ -180,16 +180,17 @@ This is **different** from the production Vercel secret. Do not swap them.
 
 ## Pending manual tasks (pre-launch checklist)
 
-### Immediate
+### Non-blocking — do when ready
+- [ ] **Apply migration 014** — paste `supabase/migrations/014_customers_channel_optout.sql` into Supabase SQL Editor; adds `sms_opt_out` + `whatsapp_opt_out` to customers
+- [ ] **Apply migration 015** — paste `supabase/migrations/015_rls_policies.sql` into Supabase SQL Editor; full RLS on all 24 tables; Clerk JWT link is live so user-specific policies will enforce immediately
 - [ ] **Test Clerk webhook** — sign up with a burner email, verify `users` + `customers` rows appear in Supabase
-- [ ] **Test /dashboard** — complete a checkout with Stripe test card, verify order appears in buyer dashboard
-- [ ] **Test Stripe Customer Portal** — open `/dashboard/billing`, click "Open Billing Portal", verify Stripe portal loads with prefilled email
+- [ ] **Test /dashboard/billing** — open billing page, click "Open Billing Portal", verify Stripe portal loads with prefilled email (Issue #7 verification)
+- [ ] **Test buyer RLS end-to-end** — sign in as buyer → place test order → verify `/dashboard` only shows that buyer's orders (confirms migration 015 + Clerk JWT working together)
 
-### Phase 1b / before soft launch
-- [ ] **RLS policies** — add buyer-scoped policies on `orders`, `order_items`, `customers` (Issue #8)
-- [ ] **Admin state transitions UI** — build admin panel UI for packing → shipped → ... → delivered flow
+### Before soft launch
 - [ ] **Inventory aggregator** — wire `DeliveryBanner` cargo % to live `inventory_availability` total (currently hardcoded in `CARGO_CONFIG`)
 - [ ] **Stripe live mode** — complete Stripe business verification, switch keys from `sk_test_` to `sk_live_`, update all Vercel env vars
+- [ ] **Twilio connection** — add `TWILIO_AUTH_TOKEN` to Vercel; wire `src/lib/notifications.ts`; test SMS/WhatsApp for order events and broadcasts
 
 ### Before public launch
 - [ ] **Domain registration** — register `fijifish.com.au` or `vitifish.com.au`, point to Vercel

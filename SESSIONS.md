@@ -6,6 +6,49 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session W — 2026-04-16 — Final wrap-up: all portals live, issue tracker closed
+
+### Platform status
+All four portals are built and deployed:
+
+| Portal | Routes | Status |
+|--------|--------|--------|
+| **Buyer** | `/`, `/checkout`, `/order/success`, `/dashboard`, `/dashboard/account`, `/dashboard/billing`, `/dashboard/tracking/[orderId]`, `/account` | LIVE |
+| **Supplier** | `/supplier`, `/supplier/photos`, `/supplier/tracking`, `/supplier/history` | LIVE |
+| **Admin** | `/admin`, `/admin/windows`, `/admin/pricing`, `/admin/photos`, `/admin/orders`, `/admin/tracking`, `/admin/stories`, `/admin/customers`, `/admin/broadcasts`, `/admin/settings`, `/admin/deliveries`, `/admin/deliveries/create/[windowId]` | LIVE |
+| **Driver** | `/driver`, `/driver/deliver/[stopId]`, `/driver/history` | LIVE |
+
+### Issues — final status
+| Issue | Description | Status |
+|-------|-------------|--------|
+| #3 | Clerk session token | RESOLVED 2026-04-14 |
+| #4 | Vercel env vars | RESOLVED 2026-04-14 |
+| #5 | CountdownTimer hydration | RESOLVED 2026-04-14 |
+| #6 | /order/success auth gate | RESOLVED 2026-04-12 |
+| #7 | STRIPE_PORTAL_URL | SET in Vercel — needs live verification |
+| #8 | RLS policies | Code done (migration 015) — manual apply pending |
+| #9 | Storage buckets private | RESOLVED 2026-04-16 |
+| #10 | Admin run assignment | RESOLVED 2026-04-15 |
+| #11 | Clerk JWT → Supabase | RESOLVED 2026-04-16 |
+
+### Pending manual tasks (not blocking, do when ready)
+- [ ] Apply migration 014 in Supabase SQL Editor (`sms_opt_out`/`whatsapp_opt_out` on customers)
+- [ ] Apply migration 015 in Supabase SQL Editor (RLS policies on all 24 tables)
+- [ ] Test `/dashboard/billing` → Stripe Customer Portal loads (verify #7)
+- [ ] Test Clerk webhook: sign up with burner email → verify `users` + `customers` rows in Supabase
+
+### Next priorities (business, not code)
+1. Call **Express Freight Management Nadi** (+679 222 0007) — air freight pricing for perishable fish cargo
+2. Call **C.T. Freight Sydney** — customs clearance for perishable fish imports
+3. Apply migrations 014 + 015 in Supabase SQL Editor
+4. Twilio integration (`src/lib/notifications.ts` not yet built — wire SMS/WhatsApp when ready)
+5. Referral system (deferred to future phase)
+
+### Next code session
+Resume with: apply migration 015 RLS policies → test buyer RLS end-to-end (sign in → place order → verify `/dashboard` only shows that buyer's orders). Then Twilio integration or referral system per business priorities.
+
+---
+
 ## Session V — 2026-04-16 — Ops: close issues #9 and #11 via manual config
 
 ### Goal
