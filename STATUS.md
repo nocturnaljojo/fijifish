@@ -1,6 +1,6 @@
 # FijiFish — Build Status
 
-Last updated: 2026-04-16 (Sessions R–W — driver portal + delivery assignment + RLS policies + Clerk JWT integration + all issues closed)
+Last updated: 2026-04-16 (Sessions R–X — driver portal + delivery assignment + RLS policies + Clerk JWT integration + always-open storefront + weekly Thursday cadence + shipment-date clarity)
 
 ---
 
@@ -30,12 +30,13 @@ Last updated: 2026-04-16 (Sessions R–W — driver portal + delivery assignment
 2. Call C.T. Freight Sydney — customs clearance for perishable fish imports
 
 **Technical (when ready):**
-1. Apply migration 015 (RLS) in Supabase SQL Editor — user-specific policies now unblocked
-2. Apply migration 014 (opt-out columns) in Supabase SQL Editor
-3. Test end-to-end buyer RLS: sign in → order → verify `/dashboard` only shows own orders
-4. Verify `/dashboard/billing` Stripe Customer Portal (Issue #7)
-5. Twilio integration (`src/lib/notifications.ts`) — wire SMS/WhatsApp for order + broadcast events
-6. Referral system (deferred)
+1. Apply migration 014 (opt-out columns) in Supabase SQL Editor
+2. Apply migration 015 (RLS) in Supabase SQL Editor — user-specific policies now unblocked
+3. **Apply migration 016** (Thursday flight windows seed) in Supabase SQL Editor
+4. Test end-to-end buyer RLS: sign in → order → verify `/dashboard` only shows own orders
+5. Verify `/dashboard/billing` Stripe Customer Portal (Issue #7)
+6. Twilio integration (`src/lib/notifications.ts`) — wire SMS/WhatsApp for order + broadcast events
+7. Referral system (deferred)
 
 ---
 
@@ -203,6 +204,8 @@ Last updated: 2026-04-16 (Sessions R–W — driver portal + delivery assignment
 
 **Migration 015 created:** Full RLS policies on all 24 customer-facing tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor. Includes helper functions `requesting_user_clerk_id()` and `requesting_user_role()`. Public SELECT and anon INSERT policies work immediately; user-specific policies require Clerk JWT → Supabase setup (see issue #11).
 
+**Migration 016 created:** Seeds next 4 weekly Thursday flight windows (Apr 17, Apr 24, May 1, May 8 2026) with correct UTC timestamps (opens Friday 8am AEST, closes Tuesday 5pm AEST). **MANUAL APPLY REQUIRED** via Supabase SQL Editor.
+
 **Migration 013 created:** `shipment-updates` storage bucket SQL (public, 2MB, JPEG/PNG/WebP). **MANUAL TASK REQUIRED:** Apply migration 013 in Supabase Dashboard → SQL Editor (Storage bucket INSERT is not auto-applied).
 
 **Migration 012 applied:** `users.is_active` (boolean, default true) + `users.deleted_at` (timestamptz) added for soft-delete support. Clerk webhook sets `is_active=false` + `deleted_at` on `user.deleted` instead of hard-deleting (which would cascade and destroy order history).
@@ -239,7 +242,7 @@ Last updated: 2026-04-16 (Sessions R–W — driver portal + delivery assignment
 | `src/lib/stripe.ts` | LIVE | Nullable Stripe client; soft warn if unconfigured |
 | `src/lib/flight-window-state.ts` | LIVE | Pure `getFlightWindowStatus(window, now)` — time-driven states computed, admin-driven states from DB |
 | `src/lib/flight-window-actions.ts` | LIVE | Server actions for admin state transitions (markAsPacking → markAsDelivered, cancelWindow) |
-| `src/hooks/useFlightWindow.ts` | LIVE | Client hook — fetches current window, recomputes status every 30s |
+| `src/hooks/useFlightWindow.ts` | LIVE | Client hook — 3-parallel queries, recomputes every 30s; exposes `isFreshWindow`, `shipmentDateLabel`, `shipmentDateShort` |
 | `src/lib/order-engine.ts` | NOT BUILT | (was: order window state machine — superseded by flight-window-state.ts) |
 | `src/lib/route-optimiser.ts` | NOT BUILT | Delivery route optimisation |
 | `src/lib/notifications.ts` | NOT BUILT | Twilio SMS/WhatsApp dispatcher |
@@ -314,3 +317,4 @@ All "A$35" price labels centralised to `PRICING_CONFIG.defaultPriceLabel` in `sr
 Remaining hardcoded:
 - `CARGO_CONFIG.capacityPercent` in `DeliveryBanner` — cargo % still from config until `inventory_availability` is wired to a real-time aggregator
 - `TEST_INVENTORY` in `page.tsx` — still used when a species has no `inventory_availability` row for the current window
+- `FLIGHT_CONFIG.orderCloseAt` + `FLIGHT_CONFIG.nextDeliveryLabel` still exist in `config.ts` but are no longer used by `CartDrawer` (now live from hook); used only by `FishCard` countdown timer fallback before hook loads
