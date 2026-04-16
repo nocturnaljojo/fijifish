@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CapacityBar from "./CapacityBar";
 import CountdownTimer from "./CountdownTimer";
-import { FLIGHT_CONFIG, THRESHOLDS } from "@/lib/config";
+import { FLIGHT_CONFIG } from "@/lib/config";
 import { detectCountryFromLocale } from "@/lib/pricing";
 import { useCart } from "@/lib/cart";
 import { useFlightWindow } from "@/hooks/useFlightWindow";
@@ -58,7 +58,7 @@ function HeroFishCard({
   windowStatus,
   orderOpenAt,
   isPreOrderMode,
-  flightDate,
+  shipmentDateShort,
   hasNoWindow,
 }: {
   fish: FishCardData;
@@ -66,7 +66,8 @@ function HeroFishCard({
   windowStatus: FlightWindowStatus;
   orderOpenAt: string | null;
   isPreOrderMode: boolean;
-  flightDate: string | null;
+  /** Short delivery date label — "Thu 24 Apr". Null when no shoppable window. */
+  shipmentDateShort: string | null;
   hasNoWindow: boolean;
 }) {
   const isSoldOut = fish.available_kg <= 0;
@@ -251,9 +252,9 @@ function HeroFishCard({
                     ? "In Cart — Add Another kg"
                     : `Pre-order — ${formatPrice(fish.price_aud_cents)}/kg`}
                 </button>
-                {flightDate && (
+                {shipmentDateShort && (
                   <p className="text-xs text-ocean-teal/80 text-center font-mono">
-                    🗓️ For {new Date(flightDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })} delivery
+                    → Arrives {shipmentDateShort}
                   </p>
                 )}
               </>
@@ -283,7 +284,12 @@ function HeroFishCard({
                     ? "In Cart — Add Another kg"
                     : `Secure Your Order — ${formatPrice(fish.price_aud_cents)}/kg`}
                 </button>
-                {canOrder && (
+                {canOrder && shipmentDateShort && (
+                  <p className="text-xs text-ocean-teal/80 text-center font-mono">
+                    → Arrives {shipmentDateShort}
+                  </p>
+                )}
+                {canOrder && !shipmentDateShort && (
                   <p className="text-xs text-text-secondary text-center font-mono">
                     🛩️ Limited cargo space · ⏰ Catch window closing soon
                   </p>
@@ -305,7 +311,7 @@ export default function FishCard({
   index = 0,
   orderCloseAt,
   isPreOrderMode: isPreOrderModeProp,
-  flightDate: flightDateProp,
+  flightDate: _flightDateProp,
 }: {
   fish: FishCardData;
   isHero?: boolean;
@@ -320,7 +326,7 @@ export default function FishCard({
 
   // Hooks must be called unconditionally before any early returns
   const { addItem, openCart, items } = useCart();
-  const { status: windowStatus, currentWindow, shoppableWindow, isPreOrderMode: hookPreOrder } = useFlightWindow();
+  const { status: windowStatus, currentWindow, shoppableWindow, isPreOrderMode: hookPreOrder, shipmentDateShort } = useFlightWindow();
   const [justAdded, setJustAdded] = useState(false);
   const [isNonAU, setIsNonAU] = useState(false);
 
@@ -339,7 +345,6 @@ export default function FishCard({
 
   // Use hook value once loaded (loading=false), fall back to server prop while loading
   const isPreOrderMode = hookPreOrder || (isPreOrderModeProp ?? false);
-  const flightDate = shoppableWindow?.flight_date ?? flightDateProp ?? null;
   const hasNoWindow = !shoppableWindow && !canOrder && !isPreOrderMode;
   const canPreOrder = isPreOrderMode && !isSoldOut && fish.hasInventory !== false;
 
@@ -358,7 +363,7 @@ export default function FishCard({
           windowStatus={windowStatus}
           orderOpenAt={orderOpenAt}
           isPreOrderMode={isPreOrderMode}
-          flightDate={flightDate}
+          shipmentDateShort={shipmentDateShort ?? null}
           hasNoWindow={hasNoWindow}
         />
       </motion.div>
@@ -520,9 +525,9 @@ export default function FishCard({
               >
                 {justAdded ? "✅ Pre-order confirmed!" : inCart ? "In Cart — Add Another" : "Pre-order"}
               </button>
-              {flightDate && (
+              {shipmentDateShort && (
                 <p className="text-xs text-ocean-teal/80 text-center font-mono">
-                  🗓️ For {new Date(flightDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })} delivery
+                  → Arrives {shipmentDateShort}
                 </p>
               )}
             </div>
@@ -541,9 +546,9 @@ export default function FishCard({
               >
                 {justAdded ? "✅ Added!" : inCart ? "In Cart — Add Another" : "Order Now"}
               </button>
-              {fish.available_kg < fish.total_kg * (THRESHOLDS.cargoFillingFast / 100) && fish.hasInventory !== false && (
-                <p className="text-xs text-text-secondary text-center font-mono">
-                  Limited cargo space remaining
+              {shipmentDateShort && (
+                <p className="text-xs text-ocean-teal/80 text-center font-mono">
+                  → Arrives {shipmentDateShort}
                 </p>
               )}
             </div>

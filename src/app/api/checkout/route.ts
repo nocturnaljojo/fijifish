@@ -260,7 +260,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
         quantity: 1,
       };
     }),
-    success_url: `${appUrl}/order/success?session_id={CHECKOUT_SESSION_ID}${isPreOrder ? "&preorder=true" : ""}`,
+    success_url: `${appUrl}/order/success?session_id={CHECKOUT_SESSION_ID}${isPreOrder ? "&preorder=true" : ""}${window.flight_date ? `&flight_date=${window.flight_date}` : ""}`,
     cancel_url: `${appUrl}/checkout?cancelled=true`,
     metadata: {
       order_id: order.id,

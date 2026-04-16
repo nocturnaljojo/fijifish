@@ -128,7 +128,7 @@ async function handleCheckoutCompleted(
     })
     .eq("id", orderId)
     .eq("status", "pending")
-    .select("id, customer_id")
+    .select("id, customer_id, flight_window_id")
     .maybeSingle();
 
   if (error) {
@@ -144,11 +144,29 @@ async function handleCheckoutCompleted(
   // NOTE: Inventory capacity was already reserved by /api/checkout before
   // the Stripe session was created. No inventory change needed here.
 
+  // Fetch flight date for the arrival message
+  let arrivalSuffix = "";
+  if (updated.flight_window_id) {
+    const { data: fw } = await supabase
+      .from("flight_windows")
+      .select("flight_date")
+      .eq("id", updated.flight_window_id as string)
+      .maybeSingle();
+    if (fw?.flight_date) {
+      const d = new Date((fw.flight_date as string) + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        const day = d.getDate();
+        const month = d.toLocaleDateString("en-AU", { month: "short" });
+        arrivalSuffix = ` Arriving Thursday ${day} ${month}.`;
+      }
+    }
+  }
+
   await logNotification(
     supabase,
     updated.customer_id as string,
     "order_confirmed",
-    `Your FijiFish order has been confirmed. Order ref: ${orderId.slice(-8).toUpperCase()}.`,
+    `Your FijiFish order has been confirmed. Order ref: ${orderId.slice(-8).toUpperCase()}.${arrivalSuffix}`,
   );
 }
 

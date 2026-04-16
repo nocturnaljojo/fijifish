@@ -40,6 +40,15 @@ export interface FlightWindowState {
   timeUntilOpen: number | null;
   /** True when status is 'open' or 'closing_soon' — buyers can order the current window. */
   isOrderingOpen: boolean;
+  /**
+   * True when the order window opened within the last 24 hours and is not yet closing_soon.
+   * Used to show the "new window just opened" banner variant. Mutually exclusive with closing_soon.
+   */
+  isFreshWindow: boolean;
+  /** Long delivery date label for customer-facing messaging. e.g. "Thursday 23 April" */
+  shipmentDateLabel: string | null;
+  /** Short delivery date label for inline CTA hints. e.g. "Thu 23 Apr" */
+  shipmentDateShort: string | null;
   loading: boolean;
 }
 
@@ -47,6 +56,36 @@ interface WindowFetch {
   adminWindow: FlightWindow | null;
   openWindow: FlightWindow | null;
   upcomingWindow: FlightWindow | null;
+}
+
+/** 24 hours in ms — window is "fresh" if it opened within this period. */
+const FRESH_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Format a flight_date string (YYYY-MM-DD) as a long label for buyers.
+ * e.g. "2026-04-24" → "Thursday 24 April"
+ * The date is treated as local (Australia/Sydney) to avoid off-by-one at midnight UTC.
+ */
+function shipmentDateLabelFrom(flightDate: string | null | undefined): string | null {
+  if (!flightDate) return null;
+  // Append T00:00:00 so Date parses as local-midnight rather than UTC-midnight
+  const d = new Date(flightDate + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  const weekday = d.toLocaleDateString("en-AU", { weekday: "long" });
+  const day = d.getDate();
+  const month = d.toLocaleDateString("en-AU", { month: "long" });
+  return `${weekday} ${day} ${month}`;
+}
+
+/**
+ * Format a flight_date string (YYYY-MM-DD) as a short label for inline hints.
+ * e.g. "2026-04-24" → "Thu 24 Apr"
+ */
+function shipmentDateShortFrom(flightDate: string | null | undefined): string | null {
+  if (!flightDate) return null;
+  const d = new Date(flightDate + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
 }
 
 const LOADING_STATE: FlightWindowState = {
@@ -57,6 +96,9 @@ const LOADING_STATE: FlightWindowState = {
   timeUntilClose: null,
   timeUntilOpen: null,
   isOrderingOpen: false,
+  isFreshWindow: false,
+  shipmentDateLabel: null,
+  shipmentDateShort: null,
   loading: true,
 };
 
@@ -80,6 +122,16 @@ function derive(fetch: WindowFetch): FlightWindowState {
   const closeMs = new Date(current.order_close_at).getTime();
   const openMs = new Date(current.order_open_at).getTime();
 
+  // isFreshWindow: open window that opened less than 24h ago, and not yet closing_soon.
+  // Mutually exclusive with closing_soon — once the window enters closing_soon it's no longer "fresh".
+  const isFreshWindow =
+    status === "open" &&
+    openWindow !== null &&
+    nowMs - new Date(openWindow.order_open_at).getTime() < FRESH_WINDOW_MS;
+
+  const shipmentDateLabel = shipmentDateLabelFrom(shoppable?.flight_date);
+  const shipmentDateShort = shipmentDateShortFrom(shoppable?.flight_date);
+
   return {
     currentWindow: current,
     shoppableWindow: shoppable,
@@ -88,6 +140,9 @@ function derive(fetch: WindowFetch): FlightWindowState {
     timeUntilClose: Math.max(0, closeMs - nowMs),
     timeUntilOpen: Math.max(0, openMs - nowMs),
     isOrderingOpen: computeIsOrderingOpen(status),
+    isFreshWindow,
+    shipmentDateLabel,
+    shipmentDateShort,
     loading: false,
   };
 }

@@ -119,7 +119,15 @@ inventory_availability:
 - Admin can adjust total_capacity_kg mid-window (cousin calls and says less available)
   → available_kg recalculates → all connected browsers update instantly
 
-### 4.2 Countdown Timer
+### 4.2 Flight Cadence
+
+**Weekly Thursday delivery:**
+- Fish flown every Thursday, Fiji Airways FJ911 (Nadi → Sydney)
+- Order window opens: Friday 8:00am AEST (7 days before flight)
+- Order window closes: Tuesday 5:00pm AEST (~43h before flight)
+- Cousin packs: Wednesday; fish departs: Thursday
+
+### 4.3 Countdown Timer
 Each flight window has open and close times:
 ```
 flight_windows:
@@ -130,13 +138,22 @@ flight_windows:
 **What buyers see:**
 ```
 ⏰ Orders close in: 1d 14h 23m 07s
-✈️ Next flight: Wednesday 16 April
+✈️ Arriving Thursday 24 April
 ```
 
 - Timer counts down to order_close_at
-- At 6 hours remaining: status changes to "closing_soon", banner turns amber
+- At 6 hours remaining: status changes to "closing_soon", banner turns amber/red
 - At 0: window closes, all species become unorderable regardless of remaining capacity
 - Order summary auto-sent to assigned supplier village
+
+**isFreshWindow:** when the order window opened within the last 24 hours AND status is `open`
+(not yet closing_soon). Banner shows: "🆕 New order window just opened — you're ordering
+for [Thursday DD Month] delivery. Order by Tuesday 5pm." Mutually exclusive with closing_soon.
+
+**Shipment date messaging principle:** The flight_date from the shoppable window is surfaced
+everywhere a buyer might wonder "when does this arrive?" — fish card CTAs, cart drawer, checkout
+form, order success page, and order_confirmed notification. NEVER hardcode the date; always
+derive it from the shoppable flight window row.
 
 ### 4.3 Combined display per fish card:
 ```

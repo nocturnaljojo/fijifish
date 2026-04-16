@@ -78,7 +78,7 @@ function formatOpenAt(iso: string): string {
 }
 
 export default function DeliveryBanner() {
-  const { currentWindow, shoppableWindow, isPreOrderMode, status, loading } = useFlightWindow();
+  const { currentWindow, shoppableWindow, isPreOrderMode, isFreshWindow, shipmentDateLabel, status, loading } = useFlightWindow();
 
   const CARGO_PCT = CARGO_CONFIG.capacityPercent; // TODO: wire to inventory_availability in Phase 1b
 
@@ -155,6 +155,27 @@ export default function DeliveryBanner() {
                 Opens {openLabel}
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Fresh window: just opened (< 24h ago, not yet closing_soon) ────────────
+  if (!loading && isFreshWindow && shipmentDateLabel) {
+    return (
+      <div
+        className="sticky top-0 z-50 border-b border-ocean-teal/30 backdrop-blur-md"
+        style={{ background: "rgba(10,15,26,0.97)" }}
+      >
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center justify-center gap-2.5 py-2.5 sm:py-3">
+            <span className="text-lg" aria-hidden="true">🆕</span>
+            <span className="text-sm font-semibold text-ocean-teal">
+              New order window just opened — you&apos;re ordering for{" "}
+              <span className="font-bold">{shipmentDateLabel}</span> delivery.{" "}
+              <span className="text-ocean-teal/70 font-normal">Order by Tuesday 5pm.</span>
+            </span>
           </div>
         </div>
       </div>

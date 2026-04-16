@@ -1,108 +1,89 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useFlightWindow } from "@/hooks/useFlightWindow";
 
-// ── Schedule data ─────────────────────────────────────────────────────────────
-// Fiji Airways published timetable — Nadi (NAN) → Sydney (SYD).
-// FJT = UTC+12 | AEST = UTC+10 | FJT is 2h ahead of AEST.
-// These times are the timetable values; actual times subject to change.
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-interface ScheduleDef {
-  flightNo: string;
-  depFJT: string;   // "HH:MM" in Fiji Time
-  arrAEST: string;  // "HH:MM" in AEST
-  // days of week this flight operates: 0=Sun…6=Sat, empty = daily
-  operatingDays?: number[];
-}
-
-const SCHEDULES: ScheduleDef[] = [
-  { flightNo: "FJ911", depFJT: "09:30", arrAEST: "11:30" },                 // daily
-  { flightNo: "FJ915", depFJT: "19:15", arrAEST: "21:15", operatingDays: [1, 3, 5] }, // Mon/Wed/Fri
-];
-
-const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_SHORT  = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-interface FlightEntry {
+function fmt(d: Date): string {
+  return `${DAY_SHORT[d.getDay()]} ${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
+}
+
+/** Returns the date of the next Thursday (or today if today is Thursday). */
+function nextThursday(from: Date): Date {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const dow = d.getDay(); // 0=Sun…6=Sat, Thu=4
+  const diff = (4 - dow + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+interface FlightRow {
   key: string;
-  dayLabel: string;   // "Thu 10 Apr"
-  flightNo: string;
-  depFJT: string;
-  arrAEST: string;
-  isToday: boolean;
+  flightDate: Date;
+  flightLabel: string;   // "Thu 17 Apr"
+  orderByLabel: string;  // "Tue 15 Apr 5pm"
+  flightDateStr: string; // "2026-04-17" — matches flight_windows.flight_date
 }
 
-function todayLocalStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+/** Build the next 4 Thursday flight rows from a base date. */
+function buildThursdayRows(base: Date): FlightRow[] {
+  const rows: FlightRow[] = [];
+  let cursor = nextThursday(base);
 
-function buildSchedule(baseStr: string, numDays: number): FlightEntry[] {
-  const [y, mo, dd] = baseStr.split("-").map(Number);
-  const entries: FlightEntry[] = [];
+  for (let i = 0; i < 4; i++) {
+    const flightDate = new Date(cursor);
 
-  for (let i = 0; i < numDays; i++) {
-    const date = new Date(y, mo - 1, dd + i);
-    const dow = date.getDay();
-    const dayLabel = `${DAY_SHORT[dow]} ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
-    const isToday = i === 0;
+    // "Order by" = preceding Tuesday 5pm AEST
+    const tuesdayBefore = new Date(flightDate);
+    tuesdayBefore.setDate(flightDate.getDate() - 2); // Thu - 2 = Tue
+    const orderByLabel = `${fmt(tuesdayBefore)} 5pm`;
 
-    for (const sched of SCHEDULES) {
-      const runs =
-        !sched.operatingDays || sched.operatingDays.includes(dow);
-      if (!runs) continue;
-      entries.push({
-        key: `${baseStr}-${i}-${sched.flightNo}`,
-        dayLabel,
-        flightNo: sched.flightNo,
-        depFJT: sched.depFJT,
-        arrAEST: sched.arrAEST,
-        isToday,
-      });
-    }
+    const yy = flightDate.getFullYear();
+    const mm = String(flightDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(flightDate.getDate()).padStart(2, "0");
+
+    rows.push({
+      key: `${yy}-${mm}-${dd}`,
+      flightDate,
+      flightLabel: fmt(flightDate),
+      orderByLabel,
+      flightDateStr: `${yy}-${mm}-${dd}`,
+    });
+
+    // Advance to next Thursday
+    cursor = new Date(cursor);
+    cursor.setDate(cursor.getDate() + 7);
   }
 
-  return entries;
+  return rows;
 }
 
-// Partition entries into first-7-days / remaining-7-days
-function splitByDays(entries: FlightEntry[], cutoffDay: number): [FlightEntry[], FlightEntry[]] {
-  // Count unique day labels up to cutoff
-  const seen = new Set<string>();
-  const first: FlightEntry[] = [];
-  const rest: FlightEntry[] = [];
-
-  for (const e of entries) {
-    seen.add(e.dayLabel);
-    if (seen.size <= cutoffDay) first.push(e);
-    else rest.push(e);
-  }
-  return [first, rest];
-}
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FlightSchedule() {
-  const [todayStr, setTodayStr] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [todayDate, setTodayDate] = useState<Date | null>(null);
+  const { shoppableWindow } = useFlightWindow();
 
-  // Set date on client only to avoid hydration mismatch (intentional pattern)
+  // Set on client only to avoid hydration mismatch
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setTodayStr(todayLocalStr()); }, []);
+  useEffect(() => { setTodayDate(new Date()); }, []);
 
-  if (!todayStr) {
-    // Skeleton while hydrating
+  if (!todayDate) {
     return (
       <div className="flex flex-col gap-2 pt-1">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-9 rounded-lg bg-bg-tertiary animate-pulse" />
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-bg-tertiary animate-pulse" />
         ))}
       </div>
     );
   }
 
-  const allEntries = buildSchedule(todayStr, 14);
-  const [first7, rest7] = splitByDays(allEntries, 7);
-  const visible = showAll ? allEntries : first7;
-  const nextIdx = 0; // first entry is always the next upcoming flight
+  const rows = buildThursdayRows(todayDate);
+  const shoppableDateStr = shoppableWindow?.flight_date ?? null;
 
   return (
     <div className="flex flex-col h-full">
@@ -112,101 +93,59 @@ export default function FlightSchedule() {
           <p className="text-xs font-mono text-text-secondary uppercase tracking-wider">
             Upcoming Flights
           </p>
-          <span className="text-xs font-mono text-ocean-teal/70">NAN → SYD</span>
+          <span className="text-xs font-mono text-ocean-teal/70">NAN → SYD · Thursdays</span>
         </div>
         <div className="h-px bg-border-default" />
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 px-2 mb-1">
-        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider w-16">Date</span>
-        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider">Flight</span>
-        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider text-right">Dep FJT</span>
-        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider text-right">Arr AEST</span>
+      <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-2 mb-1">
+        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider">Delivery</span>
+        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider text-right">Order by</span>
+        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider text-right w-12">Flight</span>
       </div>
 
       {/* Flight rows */}
       <div className="flex flex-col gap-1 flex-1 min-h-0">
-        {visible.map((entry, i) => {
-          const isNext = i === nextIdx;
+        {rows.map((row) => {
+          const isShoppable = row.flightDateStr === shoppableDateStr;
           return (
             <div
-              key={entry.key}
-              className={`grid grid-cols-[auto_1fr_auto_auto] gap-x-2 items-center px-2 py-1.5 rounded-lg border transition-colors ${
-                isNext
+              key={row.key}
+              className={`grid grid-cols-[1fr_auto_auto] gap-x-3 items-center px-2 py-2 rounded-lg border transition-colors ${
+                isShoppable
                   ? "bg-ocean-teal/8 border-ocean-teal/25"
-                  : entry.isToday
-                  ? "bg-bg-tertiary border-border-default"
                   : "bg-bg-secondary border-border-default"
               }`}
             >
-              {/* Date */}
-              <span
-                className={`text-[10px] font-mono w-16 leading-tight ${
-                  isNext ? "text-ocean-teal" : "text-text-secondary"
-                }`}
-              >
-                {entry.dayLabel}
-                {entry.isToday && (
-                  <span className="block text-[9px] text-lagoon-green font-semibold tracking-wider uppercase">
-                    today
+              {/* Delivery date */}
+              <span className={`text-xs font-mono leading-tight ${isShoppable ? "text-ocean-teal font-semibold" : "text-text-primary"}`}>
+                {row.flightLabel}
+                {isShoppable && (
+                  <span className="ml-1.5 text-[9px] font-mono font-bold bg-ocean-teal/15 text-ocean-teal border border-ocean-teal/30 px-1 py-0.5 rounded uppercase tracking-wider leading-none align-middle">
+                    open
                   </span>
                 )}
               </span>
 
-              {/* Flight number + NEXT badge */}
-              <span className="flex items-center gap-1.5">
-                <span
-                  className={`text-xs font-mono font-semibold ${
-                    isNext ? "text-ocean-teal" : "text-text-primary"
-                  }`}
-                >
-                  {entry.flightNo}
-                </span>
-                {isNext && (
-                  <span className="text-[9px] font-mono font-bold bg-ocean-teal/15 text-ocean-teal border border-ocean-teal/30 px-1 py-0.5 rounded uppercase tracking-wider leading-none">
-                    next
-                  </span>
-                )}
+              {/* Order-by deadline */}
+              <span className={`text-[10px] font-mono text-right tabular-nums ${isShoppable ? "text-ocean-teal/80" : "text-text-secondary"}`}>
+                {row.orderByLabel}
               </span>
 
-              {/* Dep FJT */}
-              <span
-                className={`text-xs font-mono text-right tabular-nums ${
-                  isNext ? "text-ocean-teal" : "text-text-secondary"
-                }`}
-              >
-                {entry.depFJT}
-              </span>
-
-              {/* Arr AEST */}
-              <span
-                className={`text-xs font-mono text-right tabular-nums ${
-                  isNext ? "text-ocean-teal" : "text-text-secondary"
-                }`}
-              >
-                {entry.arrAEST}
+              {/* Flight number */}
+              <span className={`text-[10px] font-mono text-right w-12 ${isShoppable ? "text-ocean-teal" : "text-text-secondary"}`}>
+                FJ911
               </span>
             </div>
           );
         })}
       </div>
 
-      {/* Show more / show less */}
-      {rest7.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="mt-2 text-xs font-mono text-ocean-teal/70 hover:text-ocean-teal transition-colors text-left"
-        >
-          {showAll ? "← Show 7 days" : `Show all 14 days (${rest7.length} more) →`}
-        </button>
-      )}
-
       {/* Disclaimer */}
-      <p className="mt-2 text-[10px] font-mono text-text-secondary/40 leading-relaxed">
-        Times approx. FJT = UTC+12, AEST = UTC+10.{" "}
-        <span className="whitespace-nowrap">Confirm with Fiji Airways.</span>
+      <p className="mt-3 text-[10px] font-mono text-text-secondary/40 leading-relaxed">
+        Weekly Thursday delivery. Order by Tuesday 5pm AEST.{" "}
+        <span className="whitespace-nowrap">Fiji Airways FJ911, Nadi → Sydney.</span>
       </p>
     </div>
   );

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { X, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { FLIGHT_CONFIG } from "@/lib/config";
+import { useFlightWindow } from "@/hooks/useFlightWindow";
 import CountdownTimer from "./CountdownTimer";
 
 function formatPrice(cents: number): string {
@@ -14,6 +14,8 @@ function formatPrice(cents: number): string {
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, totalCents } = useCart();
+  const { shipmentDateLabel, shoppableWindow } = useFlightWindow();
+  const orderCloseTs = shoppableWindow ? new Date(shoppableWindow.order_close_at).getTime() : null;
   const [mounted, setMounted] = useState(false);
 
   // Prevent hydration mismatch — cart is localStorage-based
@@ -151,19 +153,28 @@ export default function CartDrawer() {
                 <p className="text-[10px] text-text-secondary font-mono">
                   ✓ Delivery included · Vacuum-sealed fillets · 48hr ocean to door
                 </p>
-                {/* Delivery date + closing reminder */}
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
-                  <span aria-hidden="true">📦</span>
-                  <span>Delivering <span className="text-text-primary font-medium">{FLIGHT_CONFIG.nextDeliveryLabel}</span></span>
-                  <span className="opacity-40 mx-0.5">·</span>
-                  <span>closes in</span>
-                  <CountdownTimer
-                    targetTimestamp={FLIGHT_CONFIG.orderCloseAt}
-                    className="text-[10px] font-bold"
-                    baseColor="text-reef-coral"
-                    urgentColor="text-reef-coral"
-                  />
-                </div>
+                {/* Delivery date */}
+                {shipmentDateLabel && (
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
+                    <span aria-hidden="true">📦</span>
+                    <span>
+                      Your order will arrive{" "}
+                      <span className="text-ocean-teal font-semibold">{shipmentDateLabel}</span>
+                    </span>
+                    {orderCloseTs !== null && (
+                      <>
+                        <span className="opacity-40 mx-0.5">·</span>
+                        <span>closes in</span>
+                        <CountdownTimer
+                          targetTimestamp={orderCloseTs}
+                          className="text-[10px] font-bold"
+                          baseColor="text-reef-coral"
+                          urgentColor="text-reef-coral"
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
                 <Link
                   href="/checkout"
                   onClick={closeCart}

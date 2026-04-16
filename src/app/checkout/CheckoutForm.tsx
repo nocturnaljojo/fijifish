@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
+import { useFlightWindow } from "@/hooks/useFlightWindow";
 
 interface DeliveryDetails {
   name: string;
@@ -22,6 +23,7 @@ function formatPrice(cents: number): string {
 export default function CheckoutForm() {
   const router = useRouter();
   const { items, totalCents, clearCart } = useCart();
+  const { shipmentDateLabel } = useFlightWindow();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,17 @@ export default function CheckoutForm() {
 
   return (
     <div className="space-y-6">
+      {/* Delivery date banner */}
+      {shipmentDateLabel && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-ocean-teal/8 border border-ocean-teal/20">
+          <span className="text-xl shrink-0" aria-hidden="true">📦</span>
+          <p className="text-sm text-text-primary">
+            Your order will arrive{" "}
+            <span className="font-bold text-ocean-teal">{shipmentDateLabel}</span>
+          </p>
+        </div>
+      )}
+
       {/* Order summary */}
       <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-white/10">

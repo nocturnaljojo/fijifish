@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+function formatArrivalDate(flightDate: string | null): string | null {
+  if (!flightDate) return null;
+  const d = new Date(flightDate + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  const weekday = d.toLocaleDateString("en-AU", { weekday: "long" });
+  const day = d.getDate();
+  const month = d.toLocaleDateString("en-AU", { month: "long" });
+  return `${weekday} ${day} ${month}`;
+}
+
 const NORMAL_STEPS = [
   { icon: "✅", label: "Order placed", done: true },
   { icon: "🎣", label: "Fishermen catching your order in Bua Province", done: false },
@@ -22,6 +32,8 @@ const PREORDER_STEPS = [
 function OrderSuccessContent() {
   const params = useSearchParams();
   const isPreOrder = params.get("preorder") === "true";
+  const flightDate = params.get("flight_date");
+  const arrivalLabel = formatArrivalDate(flightDate);
 
   const steps = isPreOrder ? PREORDER_STEPS : NORMAL_STEPS;
 
@@ -40,6 +52,17 @@ function OrderSuccessContent() {
               : "Your Walu is being caught fresh right now. You'll receive delivery updates via email."}
           </p>
         </div>
+
+        {/* Arrival date — prominently displayed when available */}
+        {arrivalLabel && (
+          <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-ocean-teal/8 border border-ocean-teal/25 text-center justify-center">
+            <span className="text-2xl shrink-0" aria-hidden="true">📦</span>
+            <p className="text-lg font-semibold text-text-primary">
+              Your fish will arrive{" "}
+              <span className="text-ocean-teal font-bold">{arrivalLabel}</span>
+            </p>
+          </div>
+        )}
 
         {/* What happens next */}
         <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
