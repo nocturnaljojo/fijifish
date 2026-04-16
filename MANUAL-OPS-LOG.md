@@ -47,6 +47,7 @@ Local `whsec_xxx` secret is in `.env.local` — **different from the production 
 | Webhook events registered: `user.created`, `user.updated`, `user.deleted` | ✅ Done | 2026-04-14 |
 | Signing secret → `CLERK_WEBHOOK_SECRET` on Vercel | ✅ Done | 2026-04-14 |
 | Sign-in/sign-up URLs configured in env vars | ✅ Done | 2026-04-14 |
+| JWT template "supabase" created (Configure → JWT Templates → New template): HS256 signing key = Supabase project JWT secret; claims: `aud=authenticated`, `email={{user.primary_email_address}}`, `role=authenticated` (closes #11) | ✅ Done | 2026-04-16 |
 | Live end-to-end test: sign up with burner email → verify Supabase `users` + `customers` rows | ⬜ Pending | — |
 
 ### Clerk session token template
@@ -57,6 +58,17 @@ Dashboard path: **Configure → Sessions → Customize session token**
 }
 ```
 This injects `role`, `village_id` etc. into the JWT so server-side `getUserRole()` works.
+
+### Clerk JWT template "supabase" (Issue #11 — Clerk JWT → Supabase)
+Dashboard path: **Configure → JWT Templates → New template → named "supabase"**
+- Signing algorithm: **HS256**
+- Signing key: Supabase project JWT secret (found in Supabase Dashboard → Settings → API → JWT Settings → JWT Secret)
+- Claims configured:
+  ```json
+  { "aud": "authenticated", "email": "{{user.primary_email_address}}", "role": "authenticated" }
+  ```
+- This makes Supabase accept Clerk-issued JWTs: `auth.uid()` resolves to the Clerk user ID, `TO authenticated` RLS policies match, and user-scoped queries enforce correctly on buyer/supplier/driver pages.
+- Code wired in `src/lib/supabase-auth.ts` → `getToken({ template: "supabase" })` → `createUserSupabaseClient(token)`.
 
 ### Role assignment (manual, per user)
 Dashboard path: **Users → [user] → Public metadata**
@@ -76,6 +88,8 @@ Default (no metadata set) = `buyer`.
 | Project created: `ubvfdqlqdduwhluqahuk` (AU region, Sydney) | ✅ Done | 2026-04 |
 | 12 migrations applied: 001–005, 007–012 (006 intentionally skipped) | ✅ Done | 2026-04-14 |
 | Storage buckets created: `catch-photos`, `delivery-proofs`, `village-media`, `qr-labels` | ✅ Done | 2026-04 |
+| `delivery-proofs` bucket set to **public** (Storage → delivery-proofs → Make Public) — proof photos viewable by URL; server-side admin role gate still enforces who can trigger uploads (closes #9) | ✅ Done | 2026-04-16 |
+| `shipment-updates` bucket set to **public** (Storage → shipment-updates → Make Public) — supplier/admin tracking photos served directly by URL (closes #9 adjacent) | ✅ Done | 2026-04-16 |
 | Service role key → `SUPABASE_SERVICE_ROLE_KEY` on Vercel | ✅ Done | 2026-04 |
 | Anon key → `NEXT_PUBLIC_SUPABASE_ANON_KEY` on Vercel | ✅ Done | 2026-04 |
 | RLS policies on `orders`, `order_items`, `customers` (Issue #8) | ⬜ Pending | — |

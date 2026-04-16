@@ -191,8 +191,8 @@ Last updated: 2026-04-15 (Sessions R–U — driver portal + delivery assignment
 | Bucket | Access | Max size | Status |
 |--------|--------|----------|--------|
 | `catch-photos` | Public | 1MB | Created, uploads live |
-| `shipment-updates` | Public | 2MB | Migration 013 written — APPLY MANUALLY |
-| `delivery-proofs` | Private | 5MB | Created, no uploads yet |
+| `shipment-updates` | Public | 2MB | Created, set public 2026-04-16 |
+| `delivery-proofs` | Public | 5MB | Created, set public 2026-04-16 |
 | `village-media` | Public | 50MB | Created, no uploads yet |
 | `qr-labels` | Public | 512KB | Created, no uploads yet |
 
@@ -249,21 +249,11 @@ To fix: Stripe Dashboard → Settings → Billing → Customer portal → copy U
 Migration 015 written with full RLS coverage on all 24 tables. **MANUAL APPLY REQUIRED** via Supabase SQL Editor.
 Public SELECT policies work immediately (anon key). User-specific policies (orders, customers) require Clerk JWT → Supabase configuration (see #11 below).
 
-**#11 — Pending manual config: Clerk JWT → Supabase integration**
-Code is wired up — `getSupabaseUser()` in `src/lib/supabase-auth.ts` calls `getToken({ template: 'supabase' })` and passes the JWT to Supabase via Authorization header. Two manual config steps still required:
-1. **Clerk Dashboard → JWT Templates → Create template named "supabase":**
-   ```json
-   { "role": "authenticated", "sub": "{{user.id}}", "email": "{{user.primary_email_address}}", "metadata": {{user.public_metadata}} }
-   ```
-   Audience: your Supabase project URL (e.g. `https://xxxx.supabase.co`)
-2. **Supabase Dashboard → Authentication → Third-party Auth → Add OIDC provider:**
-   Provider URL: your Clerk frontend API domain (e.g. `https://welcomed-roughy-12.clerk.accounts.dev`)
-Until step 1 is done: `getToken()` returns null → server throws → pages won't load for logged-in buyers/drivers/suppliers. Do the Clerk step first.
+**#11 — RESOLVED: Clerk JWT → Supabase integration (2026-04-16)**
+Clerk JWT template "supabase" created (HS256, Supabase JWT secret as signing key). Claims: `aud=authenticated`, `email`, `role=authenticated`. Supabase now trusts Clerk-issued JWTs — `auth.uid()` resolves on buyer/supplier/driver pages. Code was already wired (`getSupabaseUser()` in `src/lib/supabase-auth.ts`). No code changes needed.
 
-**#9 — delivery-proofs bucket is private but proof route uses getPublicUrl()**
-Migration 005 created the `delivery-proofs` bucket as **private** (5MB, no public access). The proof API route calls `supabase.storage.from("delivery-proofs").getPublicUrl(filename)` which returns a URL but it will return 400 for unauthenticated requests on a private bucket.
-To fix: either (a) change the bucket to public in Supabase Dashboard → Storage → delivery-proofs → Make Public, or (b) switch to `createSignedUrl()` for time-limited access. Decision: make public if proof photos are only admin-accessible anyway, or use signed URLs for privacy.
-Risk: low (no buyers see these photos yet), but proof photo URLs stored in DB will 404 for anyone.
+**#9 — RESOLVED: Storage bucket access fixed (2026-04-16)**
+`delivery-proofs` and `shipment-updates` buckets set to public in Supabase Dashboard → Storage. `getPublicUrl()` in `src/app/api/driver/proof/route.ts` now returns accessible URLs. Server-side role gates still enforce who can upload.
 
 **#10 — RESOLVED: Admin delivery run assignment built (Session S, 2026-04-15)**
 `/admin/deliveries` and `/admin/deliveries/create/[windowId]` now live. Driver portal reads from real DB rows.

@@ -6,6 +6,34 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session V — 2026-04-16 — Ops: close issues #9 and #11 via manual config
+
+### Goal
+Verify the Clerk JWT → Supabase integration is working (Issue #11 code was done in Session U; manual config completed between sessions), and confirm delivery-proofs + shipment-updates storage buckets are now public (Issue #9).
+
+### What was done (manual config, no code changes)
+- **Clerk JWT template "supabase" created** — Configure → JWT Templates → New template; signing algorithm HS256; signing key = Supabase project JWT secret; claims: `aud=authenticated`, `email={{user.primary_email_address}}`, `role=authenticated`. Supabase now trusts Clerk-issued JWTs. `auth.uid()` resolves correctly on buyer/supplier/driver pages.
+- **`delivery-proofs` bucket set to public** — Storage → delivery-proofs → Make Public. `getPublicUrl()` in proof route now returns accessible URLs. Closes #9.
+- **`shipment-updates` bucket set to public** — Storage → shipment-updates → Make Public. Supplier/admin tracking photo URLs now accessible.
+
+### Verification
+- `npm run build` passes clean — 53 routes, 0 TypeScript errors
+- `src/lib/supabase-auth.ts:25` — `getToken({ template: "supabase" })` matches the template name created
+- No code changes were needed — all Session U code was correct and already committed
+
+### Architecture note
+The HS256 signing approach (Supabase JWT secret as Clerk signing key) is simpler than the OIDC/JWKS approach noted in earlier sessions. Both work; HS256 is the Clerk-recommended path for Supabase integration.
+
+### Issues closed
+- #9 — delivery-proofs + shipment-updates buckets public ✅
+- #11 — Clerk JWT → Supabase linked ✅
+
+### Next session
+First task: Address issue #7 — `STRIPE_PORTAL_URL` pending (already set per MANUAL-OPS-LOG but not confirmed working). Test `/dashboard/billing` → Customer Portal link loads.
+Then: Consider testing the full buyer flow end-to-end with RLS now live — sign in as buyer → place order → verify order visible in `/dashboard` only for that buyer.
+
+---
+
 ## Session U — 2026-04-15 — Security: Clerk JWT → Supabase integration (closes #11)
 
 ### Goal
