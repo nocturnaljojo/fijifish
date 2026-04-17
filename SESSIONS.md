@@ -6,37 +6,44 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
-## Session X — 2026-04-16 — Weekly Thursday cadence + shipment-date clarity
+## Session X — 2026-04-17
 
-### What was built
-1. **Order-window-logic skill** — updated from Mon/Wed/Sat to weekly Thursday only. Documented new cadence: opens Friday 8am AEST, closes Tuesday 5pm AEST. Added `isFreshWindow` and shipment-date concepts.
-2. **Migration 016** — seeds next 4 Thursday flight windows (17 Apr, 24 Apr, 1 May, 8 May 2026) with correct UTC timestamps.
-3. **FlightSchedule.tsx** — rebuilt: shows next 4 Thursdays derived dynamically from today, "Order by Tue 5pm" column, highlights the shoppable window in ocean-teal.
-4. **useFlightWindow hook** — extended with 3 new fields: `isFreshWindow` (open AND opened < 24h ago, exclusive with closing_soon), `shipmentDateLabel` ("Thursday 24 April"), `shipmentDateShort` ("Thu 24 Apr") — both derived from `shoppableWindow.flight_date`.
-5. **DeliveryBanner.tsx** — new fresh-window variant: "🆕 New order window just opened — you're ordering for [Thursday DD Month] delivery. Order by Tuesday 5pm." Exclusive with closing_soon.
-6. **FishCard.tsx** — "→ Arrives {shipmentDateShort}" under ALL shoppable CTAs (canOrder + canPreOrder), in both HeroFishCard and standard card. Removed inline date formatting in favour of hook value.
-7. **CartDrawer.tsx** — replaced hardcoded `FLIGHT_CONFIG.nextDeliveryLabel` with "Your order will arrive [shipmentDateLabel]" from live hook. Countdown target uses `shoppableWindow.order_close_at`.
-8. **CheckoutForm.tsx** — "Your order will arrive [shipmentDateLabel]" banner above order summary.
-9. **order/success/page.tsx** — reads `?flight_date=` query param (passed by checkout API), shows "Your fish will arrive [Thursday DD Month]" prominently in ocean-teal.
-10. **api/checkout/route.ts** — success_url now appends `&flight_date={window.flight_date}`.
-11. **api/webhooks/stripe/route.ts** — order_confirmed notification now fetches flight_window.flight_date and appends "Arriving Thursday DD Mon." to the message.
-12. **FIJIFISH-WEBAPP-SPEC-v3.md** — added section 4.2 (Flight Cadence), updated 4.3 (Countdown Timer) to document isFreshWindow and shipment-date-everywhere principle.
+### Goal
+Lock the flight schedule to weekly Thursday-only shipping and surface the shipment date everywhere a buyer might wonder "when does this arrive?" — fish cards, cart, checkout, order success, and the order_confirmed notification. Build on top of the always-open storefront without touching pre-order logic.
 
-### No regressions
-- Always-open storefront / pre-order mode untouched
-- TypeScript: clean
-- ESLint: clean
-- Build: clean
+### What we built
+- `.claude/skills/order-window-logic/SKILL.md` — rewritten for weekly Thursday cadence; window opens Fri 8am AEST, closes Tue 5pm AEST; `isFreshWindow` concept documented
+- `supabase/migrations/016_thursday_flight_windows.sql` — seeds 4 Thursday windows (Apr 17, Apr 24, May 1, May 8 2026) with correct UTC timestamps
+- `src/hooks/useFlightWindow.ts` — extended with `isFreshWindow` (open + opened < 24h, exclusive with closing_soon), `shipmentDateLabel` ("Thursday 24 April"), `shipmentDateShort` ("Thu 24 Apr")
+- `src/components/FlightSchedule.tsx` — rebuilt: dynamically derives next 4 Thursdays, "Order by Tue 5pm" column, shoppable window highlighted in ocean-teal
+- `src/components/DeliveryBanner.tsx` — new fresh-window banner variant ("🆕 New order window just opened — ordering for [date]. Order by Tuesday 5pm"), exclusive with closing_soon
+- `src/components/FishCard.tsx` — "→ Arrives Thu DD Apr" under every active CTA (hero + standard card, order + pre-order paths); replaced inline date formatting with hook value
+- `src/components/CartDrawer.tsx` — replaced hardcoded `FLIGHT_CONFIG.nextDeliveryLabel` with "Your order will arrive [shipmentDateLabel]" from live hook; countdown uses `shoppableWindow.order_close_at`
+- `src/app/checkout/CheckoutForm.tsx` — "Your order will arrive [date]" banner above order summary
+- `src/app/order/success/page.tsx` — reads `?flight_date=` query param, shows "Your fish will arrive Thursday DD Month" prominently in ocean-teal
+- `src/app/api/checkout/route.ts` — success_url appends `&flight_date={window.flight_date}`
+- `src/app/api/webhooks/stripe/route.ts` — order_confirmed notification joins `flight_windows` to append "Arriving Thursday DD Mon."
+- `FIJIFISH-WEBAPP-SPEC-v3.md` — new §4.2 Flight Cadence; §4.3 documents isFreshWindow and shipment-date-everywhere principle
 
-### Pending manual tasks (carried forward)
-- [ ] Apply migration 014 (`sms_opt_out`/`whatsapp_opt_out` on customers)
-- [ ] Apply migration 015 (RLS policies on all 24 tables)
-- [ ] **Apply migration 016** (seed Thursday flight windows)
-- [ ] Test `/dashboard/billing` → Stripe Customer Portal loads (verify #7)
-- [ ] Test Clerk webhook sign-up flow
+### Decisions made
+- `isFreshWindow` is exclusive with `closing_soon` — once the window is within 6h of closing it's no longer "new", so the closing_soon urgency banner takes over. Avoids conflicting messages.
+- Passed `flight_date` as a query param on the Stripe success_url rather than fetching it client-side on the success page — the success page is static and has no auth context post-payment, so the param is the cleanest path.
+- `shipmentDateLabel` / `shipmentDateShort` are derived from `shoppableWindow.flight_date` using native `Intl` — no date library, consistent with the rest of the codebase.
+- Kept `flightDate` prop on FishCard (prefixed `_flightDateProp`) for backwards compatibility with server-side props even though it's no longer used for rendering.
 
-### Next code session
-Resume with: apply migrations 014–016 in Supabase SQL Editor → test buyer RLS end-to-end → verify fresh-window banner fires when a new window opens → Twilio integration.
+### TODOs left in code
+- [ ] `FLIGHT_CONFIG.orderCloseAt` + `nextDeliveryLabel` in `src/lib/config.ts` — still used as fallback in FishCard countdown before hook loads; can be removed once the hook is fast enough or we add a skeleton
+- [ ] `CARGO_CONFIG.capacityPercent` in `DeliveryBanner` — still hardcoded; needs live aggregate from `inventory_availability`
+
+### Parking lot (deferred — do not build yet)
+- [ ] Realtime cargo % bar wired to `inventory_availability` via Supabase subscriptions
+- [ ] Twilio SMS/WhatsApp integration (`src/lib/notifications.ts` not built)
+- [ ] Referral system
+
+### Next session
+First task: Apply migrations 014, 015, and 016 in Supabase SQL Editor (in order), then test buyer RLS end-to-end — sign in → place order → verify `/dashboard` only shows that buyer's orders.
+File to open: `supabase/migrations/014_customers_channel_optout.sql`, then `015_rls_policies.sql`, then `016_thursday_flight_windows.sql`
+Context needed: Migration 016 must be applied before the storefront shows live Thursday windows. Migration 015 requires Clerk JWT → Supabase to be working (Issue #11 resolved 2026-04-16 — should be fine).
 
 ---
 

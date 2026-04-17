@@ -10,7 +10,7 @@ Next.js 16 (App Router), TypeScript, Clerk (auth, 4 roles),
 Supabase (AU region, data + storage + realtime), Stripe, Tailwind CSS,
 Mapbox GL JS (dark maps), Twilio (SMS/WhatsApp), Vercel.
 
-## Status: Phase 3 — Driver portal LIVE; next: admin run assignment UI
+## Status: Phase 3 — All portals LIVE; always-open storefront + Thursday cadence shipped; next: apply migrations 014–016 → buyer RLS end-to-end test → Twilio
 
 ## Source of truth: FIJIFISH-WEBAPP-SPEC-v3.md
 Read this before building any feature. If spec and code disagree, spec wins.
