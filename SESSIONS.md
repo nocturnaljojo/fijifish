@@ -6,6 +6,64 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session Y+2 — 2026-04-17
+
+### Goal
+Run /db-fix to eliminate the 2 remaining FAILs from Session Y+1's audit: duplicate flight_windows (9 rows across 4 dates) and stale status values.
+
+### What we built
+- No code changes — DB-only session. 7 SQL operations applied via Supabase MCP.
+
+### DB Fixes Applied
+
+**DB fix applied 2026-04-17:** UPDATE `flight_windows` SET `order_open_at = '2026-04-10 22:00:00+00'`, `order_close_at = '2026-04-15 07:00:00+00'` WHERE `id = '15fe80ff-...'` — corrected timestamps on FK-pinned row (5pm AEST = 07:00 UTC; keeper selected by correct timestamps, not by creation date)
+
+**DB fix applied 2026-04-17:** DELETE FROM `flight_windows` WHERE `id = 'b10ead44-...'` — Apr 17 duplicate (no orders; timestamps wrong: 13:59 UTC vs spec 07:00 UTC)
+
+**DB fix applied 2026-04-17:** DELETE FROM `flight_windows` WHERE `id = '7cf29709-...'` — Apr 17 second duplicate (no orders)
+
+**DB fix applied 2026-04-17:** DELETE FROM `flight_windows` WHERE `id = '69805fa8-...'` — Apr 24 duplicate (no orders)
+
+**DB fix applied 2026-04-17:** DELETE FROM `flight_windows` WHERE `id = '131a1be6-...'` — May 1 duplicate (no orders)
+
+**DB fix applied 2026-04-17:** DELETE FROM `flight_windows` WHERE `id = '0a33afa0-...'` — May 8 duplicate (no orders)
+
+**DB fix applied 2026-04-17:** UPDATE `flight_windows` SET `status = 'closed'` WHERE `id = '15fe80ff-...'`; UPDATE `flight_windows` SET `status = 'open'` WHERE `id = '06e3e76b-...'` — stale status corrections
+
+### Key decisions made
+- FK constraint blocked DELETE of `15fe80ff` — 7 orders (4 confirmed with Stripe PIs, 3 pending) reference it; used UPDATE-in-place strategy instead of delete
+- "Keep correct timestamps" beats "keep oldest" — `15fe80ff` had wrong `order_close_at` (13:59 UTC); corrected to spec (07:00 UTC = 5pm AEST) before keeping
+- All 4 confirmed orders belong to `jovilisi@protonmail.com` (test account) — no external customers affected
+- 3 pending orders (no Stripe PI) on that row are abandoned checkouts — safe, non-blocking
+
+### DB Audit — 2026-04-17 (post-fix)
+```
+[PASS]  duplicate-flight-windows — 0 duplicates; 4 rows, one per Thursday date ✓ (was FAIL)
+[PASS]  stale-status — all 4 rows stored=derived: closed/closed, open/open, upcoming/upcoming x2 ✓ (was FAIL)
+[WARN]  stale-order-status — 3 abandoned pending orders from 2026-04-14 (unchanged, non-blocking)
+[WARN]  flight-window-count — currently_open=1 (06e3e76b), upcoming=2 ✓
+
+PASS: 10   WARN: 2   FAIL: 0   SKIP: 0
+```
+
+All 12 checks: 0 FAILs for the first time this project.
+
+### Parking lot
+- [ ] Test data cleanup — 7 orders from `jovilisi@protonmail.com` against `flight_window 15fe80ff`: decide delete outright vs add `orders.is_test` + `customers.is_test` column for admin dashboard filtering
+
+### TODOs left (next session)
+- [ ] Code-schema naming alignment — grep src/ for `orders_open_at`, `orders_close_at`, `.state` (flight_windows) and fix any drift
+- [ ] Supabase CLI linking
+- [ ] Twilio integration
+- [ ] Uniqueness constraint migration — add UNIQUE constraint on `flight_windows.flight_date` to prevent future duplicates
+
+### Next session
+First task: Code-schema naming alignment — grep for `orders_open_at` / `orders_close_at` / `.state` in src/, fix any references to match live schema column names (`order_open_at`, `order_close_at`, `.status`)
+File to open: SESSIONS.md, STATUS.md, then src/types/database.ts
+Context needed: flight_windows now has 4 clean rows. No FAILs in DB. RLS fully applied.
+
+---
+
 ## Session Y+1 — 2026-04-18
 
 ### Goal
