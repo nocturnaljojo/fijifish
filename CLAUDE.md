@@ -27,7 +27,8 @@ Read this before building any feature. If spec and code disagree, spec wins.
 ## At session start
 1. Read CLAUDE.md, SESSIONS.md, FIJIFISH-WEBAPP-SPEC-v3.md, STATUS.md
 2. State: current phase, last built, known issues, next task
-3. Load relevant skills before writing code
+3. **If last session's TODOs include migrations, schema changes, or data state issues → run /db-check before writing any code**
+4. Load relevant skills before writing code
 
 Template output:
 ```
@@ -39,6 +40,15 @@ Next task: [what I'm about to do]
 
 ## At session end
 Run /wrap-up
+
+## Agent system (4 agents)
+- `/plan` → **Planner** (Opus): pre-feature planning, spec + risk analysis
+- `/review` → **Reviewer** (Opus): pre-commit code review, security + regressions
+- `/qa` → **QA** (Sonnet): browser-based functional testing via Playwright
+- `/db-check` → **DB Steward** (Sonnet): live database integrity audit (read-only)
+- `/db-fix` → **DB Steward** fix mode: propose + approve DB corrections one at a time
+
+See `.claude/agents/README.md` for full decision tree.
 
 ## Anti-hallucination rules — MUST FOLLOW
 - NEVER assume a function, hook, table, or column exists — Grep or Read to verify first
@@ -129,6 +139,7 @@ const { addItem, updateQuantity, openCart, items } = useCart();
 - After any change to page.tsx, verify the fish grid still renders on localhost:3000
 
 ## Red lines
+- NEVER modify live production data (Supabase) without first running /db-check and confirming the issue with a SELECT preview query
 - NEVER use Supabase Auth — all auth is Clerk
 - NEVER auto-convert AUD to FJD — prices are independent
 - NEVER allow non-AU users to reach Stripe checkout
@@ -143,7 +154,8 @@ const { addItem, updateQuantity, openCart, items } = useCart();
 - NEVER skip Spam Act 2003 compliance on broadcasts
 - NEVER use createServerSupabaseClient() in public page components
 
-## Skills (15)
+## Skills (16)
+- /db-integrity — SQL query templates for live DB integrity checks (schema drift, duplicates, stale status, RLS, seed data)
 - /clerk-auth — roles, middleware, Supabase sync, village_id on suppliers
 - /worldview-ui — dark HUD design system, colours, typography, components
 - /order-window-logic — flight-driven state machine, scarcity mechanics
