@@ -6,6 +6,222 @@ Format: newest session on top. Each entry is a heading + short bullet list. Run 
 
 ---
 
+## Session Y+1 — 2026-04-18
+
+### Goal
+Repair RLS — write and apply migration 017 against the actual live schema (no suppliers/drivers tables), enabling RLS on all 24 unprotected tables with correct Clerk-based policies.
+
+### What we built
+- `supabase/migrations/017_rls_policies_corrected.sql` — 670 lines; supersedes 015; re-creates helper functions; enables RLS on 24 tables; 55 policies across all 25 tables
+
+### Pre-apply verification (Step 0)
+- `auth.jwt()` confirmed present in auth schema, returns jsonb ✓
+- `users.clerk_id` (text) and `users.role` (text) confirmed in live schema ✓
+- Clerk JWT template "supabase" verified in Dashboard: includes `metadata: {{user.public_metadata}}` ✓ — `requesting_user_role()` will resolve correctly
+- All join-chain indexes confirmed: `orders_customer_idx`, `customers_user_id_key` (unique), `users_clerk_id_key` (unique) ✓
+
+### Key decisions made in 017 vs 015
+- No INSERT policies on `users`, `customers`, `orders`, `order_items` — all written via `createServerSupabaseClient()` (service role, bypasses RLS): Clerk webhook for users/customers, checkout API for orders/order_items
+- `suppliers` and `drivers` table references removed entirely — role checks go through `users.role` directly
+- `catch_photos.supplier_id` compared against `users.id` directly (no suppliers table)
+- `delivery_runs.driver_id` compared against `users.id` directly (no drivers table)
+- `catch_batches`: `using (true)` for public read — `is_approved` column absent in live schema; re-enable when photo-approval workflow ships
+- `village_media`: `is_approved` column confirmed present — `using (is_approved = true)` intact
+- `authenticated_select_shipment_updates` tightened beyond 015's intent: buyers see only flight windows they have an order on (defense in depth — operational data not fully public); join chain fully indexed
+
+### DB Audit — 2026-04-18 (post-017)
+```
+[PASS]  schema-drift — flight_windows: all 12 columns correct
+[FAIL]  duplicate-flight-windows — 9 rows across 4 dates (unchanged, deferred)
+[FAIL]  stale-status — 2026-04-24 now also has stored=upcoming, derived=open (window opened); 2026-04-17 rows still closed/upcoming mismatch (unchanged, deferred)
+[WARN]  stale-order-status — 3 abandoned pending orders from 2026-04-14 (unchanged)
+[PASS]  orphaned-order-items — clean
+[PASS]  orphaned-inventory — clean
+[PASS]  rls-enabled — 25/25 tables rls_enabled=true ✓ (was FAIL 24/25)
+[PASS]  rls-policies — all 25 RLS tables have ≥1 policy (55 policies total) ✓ (was partial)
+[PASS]  null-violations — clean
+[PASS]  seed-completeness — fish_species 8/8, villages 1, delivery_zones 5
+[PASS]  reserved-kg-integrity — no overruns
+[WARN]  flight-window-count — currently_open=0, upcoming=6 (pre-order mode, expected)
+
+PASS: 8   WARN: 2   FAIL: 2   SKIP: 0
+```
+
+RLS blocker resolved. Remaining FAILs are flight_windows data issues only.
+
+### Helper functions live
+- `public.requesting_user_clerk_id()` — `auth.jwt() ->> 'sub'` ✓
+- `public.requesting_user_role()` — `auth.jwt() -> 'metadata' ->> 'role'` ✓
+- Both granted to `authenticated` and `anon`
+
+### TODOs left (next session)
+- [ ] flight_windows duplicate cleanup — DELETE 5 rows (keep oldest per date): b10ead44, 7cf29709 (Apr 17), 69805fa8 (Apr 24), 131a1be6 (May 1), 0a33afa0 (May 8)
+- [ ] flight_windows stale status — UPDATE 15fe80ff status='closed'; UPDATE 06e3e76b status='open' (Apr 24 window is now open)
+- [ ] Code-schema naming alignment — grep src/ for `orders_open_at`, `orders_close_at`, `.state` (flight_windows) and fix any drift
+
+### Next session
+First task: Run /db-fix for flight_windows duplicates — present SELECT preview for each delete, wait for "approve" per operation.
+File to open: SESSIONS.md (this entry), then /db-fix workflow
+Context needed: Keep oldest row per date. Apr 24 window (06e3e76b) is now open — its status needs updating to 'open' after duplicates removed.
+
+---
+
+## Session Y — 2026-04-17
+
+### Goal
+Run /db-check baseline (12 integrity checks) before starting RLS work. Diagnose why migration 015 failed to apply. Document RLS repair plan. Block all other work until RLS is fixed.
+
+### What we built
+- `.claude/agents/db-steward.md` — DB Steward agent (Sonnet, read-only, Supabase MCP)
+- `.claude/commands/db-check.md` — /db-check command (12-check audit, PASS/WARN/FAIL output)
+- `.claude/commands/db-fix.md` — /db-fix command (safety protocol: SELECT preview → show SQL → wait for "approve" → execute → verify → log)
+- `.claude/agents/README.md` — 4-agent system documentation with decision tree
+- `.claude/skills/db-integrity/SKILL.md` — 12 SQL query templates (SELECT-only)
+- `CLAUDE.md` — added DB Steward to agent system section, added /db-check step to session start protocol, added red line for live DB modifications
+
+### DB Audit — 2026-04-17 (baseline)
+
+```
+[PASS]  schema-drift — flight_windows: all 12 columns present, types correct
+[FAIL]  duplicate-flight-windows — 9 rows across 4 dates, should be 4
+          2026-04-17: 3 rows [15fe80ff (keep), b10ead44, 7cf29709]
+          2026-04-24: 2 rows [06e3e76b (keep), 69805fa8]
+          2026-05-01: 2 rows [d2957a14 (keep), 131a1be6]
+          2026-05-08: 2 rows [058b2f01 (keep), 0a33afa0]
+[FAIL]  stale-status — 3 rows for 2026-04-17: stored≠derived (all should be closed)
+          15fe80ff: stored=open → closed
+          b10ead44: stored=upcoming → closed (duplicate, delete candidate)
+          7cf29709: stored=upcoming → closed (duplicate, delete candidate)
+[WARN]  stale-order-status — 3 orders pending since 2026-04-14, all stripe_payment_intent_id=null (abandoned checkouts)
+[PASS]  orphaned-order-items — no orphaned rows
+[PASS]  orphaned-inventory — no orphaned rows
+[FAIL]  rls-enabled — 24/25 tables have rls_enabled=false; only impact_stories protected
+[PASS]  rls-policies — impact_stories (only RLS-on table) has 1 policy ✓
+[PASS]  null-violations — flight_windows, orders, inventory_availability all clean
+[PASS]  seed-completeness — fish_species: 8/8 active ✓; villages: 1 ✓; delivery_zones: 5 ✓
+[PASS]  reserved-kg-integrity — no overruns
+[WARN]  flight-window-count — currently_open=0, upcoming=6; next opens 2026-04-17 22:00 UTC (pre-order mode, expected)
+
+PASS: 7   WARN: 2   FAIL: 3   SKIP: 0
+```
+
+**Decision:** RLS FAIL is a blocker. All other work halted until RLS is resolved.
+
+### RLS Repair Plan
+
+#### Root cause: migration 015 references tables and columns that don't exist in the live DB
+
+The migration is wrapped in `begin; ... commit;`. The first `ALTER TABLE` on a non-existent table causes the entire transaction to roll back — which is why **zero** tables got RLS enabled (impact_stories kept its pre-existing RLS from migration 004, unaffected by the rollback).
+
+**Missing tables (referenced in 015, do not exist in live DB):**
+
+| Table | Lines in 015 | What it's used for |
+|-------|-------------|---------------------|
+| `suppliers` | 78, 296–310, 242–256, 411–418, 437–458 | RLS enable; supplier_select_own policy; village scoping subquery in inventory, shipment_updates, catch_photos policies |
+| `drivers` | 79, 316–330, 474–500, 519–524, 555–565 | RLS enable; driver_select_own_driver_row policy; driver scoping subquery in delivery_runs, delivery_stops, delivery_proofs policies |
+
+**Missing column (referenced in 015, does not exist in live DB):**
+
+| Column | Table | Line in 015 | Policy | Best guess for fix |
+|--------|-------|-------------|--------|-------------------|
+| `is_approved` | `catch_batches` | 678 | `public_select_approved_catch_batches` — `using (is_approved = true)` | Column needs to be added to `catch_batches` in migration 017, OR policy changed to `using (true)` (fully public) to match current schema |
+
+**What supplier/driver identity maps to in live schema:**
+
+- `suppliers` table doesn't exist. Supplier role is `users.role = 'supplier'` (set by Clerk webhook). Village scoping is in Clerk publicMetadata (`village_id` key), not in the DB.
+- `drivers` table doesn't exist. Driver role is `users.role = 'driver'` (set by Clerk webhook).
+- `catch_photos.supplier_id` (uuid) — FK target unclear; likely should point to `users.id` not `suppliers.id`.
+- `delivery_runs.driver_id` (uuid) — FK target unclear; likely should point to `users.id` not `drivers.id`.
+
+**Policies that need rewriting (supplier subquery):**
+Replace:
+```sql
+select s.village_id from suppliers s inner join users u on s.user_id = u.id
+where u.clerk_id = requesting_user_clerk_id() and s.is_active = true
+```
+With (role-only, no village scoping at DB level):
+```sql
+select id from users where clerk_id = requesting_user_clerk_id() and role = 'supplier'
+```
+Note: Village scoping for suppliers must remain at the API/server layer (already the case).
+
+**Policies that need rewriting (driver subquery):**
+Replace:
+```sql
+select d.id from drivers d inner join users u on d.user_id = u.id
+where u.clerk_id = requesting_user_clerk_id() and d.is_active = true
+```
+With:
+```sql
+select id from users where clerk_id = requesting_user_clerk_id() and role = 'driver'
+```
+
+**Policies on `suppliers` and `drivers` tables:**
+Drop entirely — no such tables. If a `suppliers` profile table is added in a future migration, those policies can be added then.
+
+#### 24 tables needing RLS in migration 017
+
+(impact_stories already has RLS from migration 004 and is NOT in this list)
+
+1. broadcast_recipients
+2. broadcasts
+3. catch_batches
+4. catch_photos
+5. customer_feedback
+6. customers
+7. delivery_demand_votes
+8. delivery_proofs
+9. delivery_runs
+10. delivery_stops
+11. delivery_zones
+12. driver_gps_logs
+13. fish_interest_votes
+14. fish_species
+15. flight_windows
+16. inventory_availability
+17. notification_log
+18. order_items
+19. orders
+20. seasons
+21. shipment_updates
+22. users
+23. village_media
+24. villages
+
+#### Fix approach
+
+1. Create `supabase/migrations/017_rls_policies_corrected.sql` — do NOT edit 015 in place
+2. Rewrite all policies against live schema:
+   - Remove `alter table suppliers` and `alter table drivers` lines
+   - Remove all policy blocks for `suppliers` and `drivers` tables
+   - Replace all `from suppliers s inner join users u` subqueries with `from users u where role = 'supplier'`
+   - Replace all `from drivers d inner join users u` subqueries with `from users u where role = 'driver'`
+   - Fix `catch_photos` policies: replace `supplier_id in (select s.id from suppliers ...)` with `supplier_id in (select id from users where clerk_id = requesting_user_clerk_id() and role = 'supplier')`
+   - Fix `delivery_runs`/`delivery_stops`/`delivery_proofs` policies: replace `driver_id in (select d.id from drivers ...)` with `driver_id in (select id from users where clerk_id = requesting_user_clerk_id() and role = 'driver')`
+   - Fix `catch_batches.is_approved` reference: change to `using (true)` (public read for all batches) OR add the column — decide at build time
+3. Apply 017 in Supabase SQL Editor
+4. Re-run /db-check — all 12 checks must PASS before any other work proceeds
+
+#### Risk (current exposure)
+All 24 tables are readable and writable with the anon key. The only protection layer is server-side `WHERE customer_id = ?` clauses in page components and API routes (which is how the app was built before RLS). This is the correct interim posture documented in migration 015's header. No customer data has been exposed beyond what Clerk auth gates already prevent at the route level.
+
+### TODOs left in code
+- [ ] `supabase/migrations/017_rls_policies_corrected.sql` — write, apply, verify
+- [ ] flight_windows duplicate cleanup — DELETE 5 duplicate rows (deferred until after RLS passes)
+- [ ] flight_windows stale status fix — UPDATE 15fe80ff status to 'closed' (deferred until after RLS passes)
+- [ ] Abandoned orders (3 rows) — low priority; no stripe_payment_intent_id so no money at risk
+
+### Parking lot (deferred — do not build yet)
+- [ ] Supplier `village_id` at DB level — currently in Clerk metadata only; if DB-level village scoping is needed for RLS, a `supplier_villages` join table would be required
+- [ ] `drivers` table — if driver profile data beyond `users.role` is needed, create via new migration
+
+### Next session
+First task: Write `supabase/migrations/017_rls_policies_corrected.sql` — rewrite 015 against live schema per repair plan above.
+File to open: `supabase/migrations/015_rls_policies.sql` (reference), then create `017_rls_policies_corrected.sql`
+Context needed: `suppliers` and `drivers` tables don't exist — all role checks go via `users.role`. Village scoping for suppliers is Clerk-side only. After applying 017, re-run /db-check — all PASS required before touching flight_windows duplicates.
+
+---
+
 ## Session X — 2026-04-17
 
 ### Goal

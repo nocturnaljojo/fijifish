@@ -10,7 +10,7 @@ Next.js 16 (App Router), TypeScript, Clerk (auth, 4 roles),
 Supabase (AU region, data + storage + realtime), Stripe, Tailwind CSS,
 Mapbox GL JS (dark maps), Twilio (SMS/WhatsApp), Vercel.
 
-## Status: Phase 3 — All portals LIVE; always-open storefront + Thursday cadence shipped; next: apply migrations 014–016 → buyer RLS end-to-end test → Twilio
+## Status: Phase 3 — All portals LIVE; RLS hardened (25/25 tables, 55 policies, migration 017 applied); next: flight_windows cleanup (5 duplicate deletes + stale status fixes via /db-fix) + code-schema naming alignment (orders_open_at → order_open_at, .state → .status) + Supabase CLI linking + Twilio
 
 ## Source of truth: FIJIFISH-WEBAPP-SPEC-v3.md
 Read this before building any feature. If spec and code disagree, spec wins.
